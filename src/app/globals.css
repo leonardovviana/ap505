@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f8fa;
+  --foreground: #111827;
+  --card: #ffffff;
+  --muted: #667085;
+  --border: #e5e7eb;
+  --ap-green: #1db954;
+  --ap-purple: #820ad1;
+  --ap-mint: #e8fff0;
+  --ap-lilac: #f7eaff;
+  --ap-ink: #0f172a;
+  --ap-surface: rgba(255, 255, 255, 0.84);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-ap-green: var(--ap-green);
+  --color-ap-purple: var(--ap-purple);
+  --color-ap-mint: var(--ap-mint);
+  --color-ap-lilac: var(--ap-lilac);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(29, 185, 84, 0.16), transparent 26%),
+    radial-gradient(circle at 92% 4%, rgba(130, 10, 209, 0.14), transparent 24%),
+    linear-gradient(180deg, #f8fafb 0%, #f6f7fb 42%, #f4f6fa 100%);
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.24), transparent 78%);
+  opacity: 0.24;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+::selection {
+  background: #c8f7d8;
+  color: #064e3b;
+}
+
+.soft-card {
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  background: var(--ap-surface);
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.hero-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, #0f172a 0%, #111827 46%, #102d27 100%);
+  color: #ffffff;
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.22);
+}
+
+.hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(29, 185, 84, 0.18), transparent 42%, rgba(130, 10, 209, 0.16) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 30%);
+  pointer-events: none;
+}
+
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  inset: auto -15% -35% auto;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(130, 10, 209, 0.24), transparent 62%);
+  filter: blur(16px);
+  pointer-events: none;
+}
+
+.section-rail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--ap-green), var(--ap-purple));
+}
+
+.surface-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.soft-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-ring:focus-visible {
+  outline-color: var(--ap-purple);
+}
