@@ -9,11 +9,6 @@ import { normalizeMoneyInput, toISODate } from "@/lib/utils";
 import { categories, paymentMethods, type Category, type ParsedExpense, type PaymentMethod } from "@/types/app";
 
 type RpcResult<T> = Promise<{ data: T | null; error: { message: string } | null }>;
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
-
-function runRpc<T>(supabase: SupabaseClient, fn: string, args: Record<string, unknown>) {
-  return supabase.rpc(fn, args) as RpcResult<T>;
-}
 
 function asString(value: FormDataEntryValue | null, fallback = "") {
   return String(value ?? fallback).trim();
@@ -69,7 +64,7 @@ export async function createCoupleAction(formData: FormData) {
   const coupleName = asString(formData.get("couple_name"), "AP505");
   const displayName = asString(formData.get("display_name"), "Eu");
 
-  const { error } = await runRpc<string>(supabase, "create_couple_with_member", {
+  const { error } = await supabase.rpc("create_couple_with_member", {
     p_couple_name: coupleName,
     p_display_name: displayName,
   });
@@ -83,7 +78,7 @@ export async function joinCoupleAction(formData: FormData) {
   const inviteCode = asString(formData.get("invite_code")).toUpperCase();
   const displayName = asString(formData.get("display_name"), "Eu");
 
-  const { error } = await runRpc<string>(supabase, "join_couple_by_invite", {
+  const { error } = await supabase.rpc("join_couple_by_invite", {
     p_invite_code: inviteCode,
     p_display_name: displayName,
   });
@@ -94,11 +89,7 @@ export async function joinCoupleAction(formData: FormData) {
 
 async function notifyPartner(coupleId: string, amount: number, category: string) {
   const { supabase } = await requireUser();
-  const { data } = await runRpc<{ endpoint: string; p256dh: string; auth_secret: string }[]>(
-    supabase,
-    "partner_push_subscriptions",
-    { p_couple_id: coupleId },
-  );
+  const { data } = await supabase.rpc("partner_push_subscriptions", { p_couple_id: coupleId });
 
   await sendPushNotifications(data ?? [], {
     title: "AP505",
