@@ -9,6 +9,7 @@ import type { CoupleMember } from "@/types/app";
 
 const desktopLinks = [
   ["Resumo", "/dashboard"],
+  ["Entradas", "/entradas"],
   ["Gastos", "/expenses"],
   ["Chat", "/chat"],
   ["Metas", "/budgets"],

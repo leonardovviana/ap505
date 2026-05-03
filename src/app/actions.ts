@@ -6,9 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 import { requireCouple, requireUser } from "@/lib/auth/context";
 import { sendPushNotifications } from "@/lib/notifications/web-push";
 import { normalizeMoneyInput, toISODate } from "@/lib/utils";
-import { categories, paymentMethods, type Category, type ParsedExpense, type PaymentMethod } from "@/types/app";
-
-type RpcResult<T> = Promise<{ data: T | null; error: { message: string } | null }>;
+import {
+  categories,
+  incomeKinds,
+  paymentMethods,
+  type Category,
+  type IncomeKind,
+  type ParsedExpense,
+  type PaymentMethod,
+} from "@/types/app";
 
 function asString(value: FormDataEntryValue | null, fallback = "") {
   return String(value ?? fallback).trim();
@@ -21,6 +27,10 @@ function cleanCategory(value: string): Category {
 function cleanPayment(value: string): PaymentMethod | null {
   if (!value) return null;
   return paymentMethods.includes(value as PaymentMethod) ? (value as PaymentMethod) : "Outro";
+}
+
+function cleanIncomeKind(value: string): IncomeKind {
+  return incomeKinds.includes(value as IncomeKind) ? (value as IncomeKind) : "salary";
 }
 
 export async function signInAction(formData: FormData) {
@@ -85,6 +95,36 @@ export async function joinCoupleAction(formData: FormData) {
 
   if (error) redirect(`/onboarding?error=${encodeURIComponent(error.message)}`);
   redirect("/dashboard");
+}
+
+export async function createIncomeAction(formData: FormData) {
+  const { supabase, user, couple } = await requireCouple();
+  const amount = normalizeMoneyInput(formData.get("amount"));
+  const memberId = asString(formData.get("member_id"));
+  const kind = cleanIncomeKind(asString(formData.get("kind"), "salary"));
+
+  const { error } = await supabase.from("incomes").insert({
+    couple_id: couple.id,
+    member_id: memberId,
+    created_by: user.id,
+    amount,
+    description: asString(formData.get("description"), "Entrada"),
+    kind,
+    income_date: asString(formData.get("income_date"), toISODate()),
+    notes: asString(formData.get("notes")) || null,
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/entradas");
+  redirect(error ? `/entradas?error=${encodeURIComponent(error.message)}` : "/entradas");
+}
+
+export async function deleteIncomeAction(formData: FormData) {
+  const { supabase } = await requireCouple();
+  const id = asString(formData.get("id"));
+  await supabase.from("incomes").delete().eq("id", id);
+  revalidatePath("/dashboard");
+  revalidatePath("/entradas");
 }
 
 async function notifyPartner(coupleId: string, amount: number, category: string) {

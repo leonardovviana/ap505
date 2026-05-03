@@ -10,6 +10,8 @@ export type Category =
 
 export type PaymentMethod = "Pix" | "Débito" | "Crédito" | "Dinheiro" | "Outro";
 
+export type IncomeKind = "salary" | "extra";
+
 export type CoupleMember = {
   id: string;
   user_id: string;
@@ -27,6 +29,23 @@ export type ParsedExpense = {
   expense_date: string;
   member_name: string;
   confidence: number;
+};
+
+export type IncomeRow = {
+  id: string;
+  couple_id: string;
+  member_id: string;
+  created_by: string;
+  amount: number;
+  description: string;
+  kind: IncomeKind;
+  income_date: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  couple_members?: {
+    display_name: string;
+  } | null;
 };
 
 export type ExpenseRow = {
@@ -75,3 +94,10 @@ export const paymentMethods: PaymentMethod[] = [
   "Dinheiro",
   "Outro",
 ];
+
+export const incomeKinds: IncomeKind[] = ["salary", "extra"];
+
+export const incomeKindLabels: Record<IncomeKind, string> = {
+  salary: "Salário",
+  extra: "Entrada extra",
+};

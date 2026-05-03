@@ -18,6 +18,11 @@ export function RealtimeRefresh({ coupleId }: { coupleId: string }) {
       )
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "incomes", filter: `couple_id=eq.${coupleId}` },
+        () => router.refresh(),
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "budgets", filter: `couple_id=eq.${coupleId}` },
         () => router.refresh(),
       )

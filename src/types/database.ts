@@ -134,6 +134,51 @@ export type Database = {
           },
         ];
       };
+      incomes: {
+        Row: {
+          id: string;
+          couple_id: string;
+          member_id: string;
+          created_by: string;
+          amount: number;
+          description: string;
+          kind: "salary" | "extra";
+          income_date: string;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          couple_id: string;
+          member_id: string;
+          created_by: string;
+          amount: number;
+          description: string;
+          kind?: "salary" | "extra";
+          income_date: string;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          description?: string;
+          kind?: "salary" | "extra";
+          income_date?: string;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "incomes_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "couple_members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       budgets: {
         Row: {
           id: string;
