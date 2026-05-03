@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteIncomeAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -14,6 +17,27 @@ export function IncomeCard({
   canDelete?: boolean;
   returnTo?: string;
 }) {
+  const [isHidden, setIsHidden] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function deleteIncome() {
+    setIsHidden(true);
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("id", income.id);
+      formData.set("return_to", returnTo);
+
+      try {
+        await deleteIncomeAction(formData);
+      } catch (error) {
+        setIsHidden(false);
+        throw error;
+      }
+    });
+  }
+
+  if (isHidden) return null;
+
   return (
     <article className="overflow-hidden rounded-[8px] bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(246,248,251,0.94))] shadow-sm ring-1 ring-black/5">
       <div className="flex">
@@ -41,13 +65,17 @@ export function IncomeCard({
             </div>
 
             {canDelete ? (
-              <form action={deleteIncomeAction}>
-                <input type="hidden" name="id" value={income.id} />
-                <input type="hidden" name="return_to" value={returnTo} />
-                <Button type="submit" variant="ghost" className="h-9 w-9 px-0" aria-label="Apagar entrada">
-                  <Trash2 size={16} />
-                </Button>
-              </form>
+              <Button
+                type="button"
+                variant="danger"
+                className="h-9 px-3 text-xs shadow-none hover:bg-rose-600 hover:text-white hover:ring-rose-600"
+                aria-label="Apagar entrada"
+                disabled={isPending}
+                onClick={deleteIncome}
+              >
+                <Trash2 size={15} />
+                Apagar
+              </Button>
             ) : null}
           </div>
         </div>
