@@ -3,10 +3,9 @@ import { requireCouple } from "@/lib/auth/context";
 import {
   expensesByCategory,
   expensesByMember,
-  sumFoodVoucherExpenses,
-  sumSpendableExpenses,
+  sumExpenses,
 } from "@/lib/expenses/summary";
-import { sumFoodVoucherIncomes, sumSpendableIncomes } from "@/lib/incomes/summary";
+import { sumIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart } from "@/lib/utils";
 import type { ExpenseRow, IncomeRow } from "@/types/app";
 
@@ -61,12 +60,9 @@ export async function GET(request: Request) {
 
   const expenses = (data ?? []) as ExpenseRow[];
   const incomes = (incomesData ?? []) as IncomeRow[];
-  const total = sumSpendableExpenses(expenses);
-  const totalIncome = sumSpendableIncomes(incomes);
+  const total = sumExpenses(expenses);
+  const totalIncome = sumIncomes(incomes);
   const balance = totalIncome - total;
-  const foodVoucherIncome = sumFoodVoucherIncomes(incomes);
-  const foodVoucherExpenses = sumFoodVoucherExpenses(expenses);
-  const foodVoucherBalance = foodVoucherIncome - foodVoucherExpenses;
   const byCategory = expensesByCategory(expenses);
   const byMember = expensesByMember(expenses, members);
 
@@ -120,7 +116,6 @@ export async function GET(request: Request) {
       <Row><Cell><Data ss:Type="String">Recebido normal</Data></Cell><Cell><Data ss:Type="Number">${totalIncome}</Data></Cell></Row>
       <Row><Cell><Data ss:Type="String">Gasto normal</Data></Cell><Cell><Data ss:Type="Number">${total}</Data></Cell></Row>
       <Row><Cell><Data ss:Type="String">Saldo disponível</Data></Cell><Cell><Data ss:Type="Number">${balance}</Data></Cell></Row>
-      <Row><Cell><Data ss:Type="String">Saldo alimentação</Data></Cell><Cell><Data ss:Type="Number">${foodVoucherBalance}</Data></Cell></Row>
       <Row />
       <Row><Cell ss:StyleID="Header"><Data ss:Type="String">Categoria</Data></Cell><Cell ss:StyleID="Header"><Data ss:Type="String">Valor</Data></Cell></Row>
       ${categoryRows}
@@ -211,10 +206,9 @@ export async function GET(request: Request) {
     </header>
     <div class="print"><button onclick="window.print()">Salvar como PDF</button></div>
     <section class="grid">
-      <div class="card"><p class="label">Recebido normal</p><p class="value">${escapeHtml(formatCurrency(totalIncome))}</p></div>
-      <div class="card"><p class="label">Gasto normal</p><p class="value">${escapeHtml(formatCurrency(total))}</p></div>
+      <div class="card"><p class="label">Recebido</p><p class="value">${escapeHtml(formatCurrency(totalIncome))}</p></div>
+      <div class="card"><p class="label">Gasto</p><p class="value">${escapeHtml(formatCurrency(total))}</p></div>
       <div class="card"><p class="label">Saldo disponível</p><p class="value">${escapeHtml(formatCurrency(balance))}</p></div>
-      <div class="card"><p class="label">Saldo alimentação</p><p class="value">${escapeHtml(formatCurrency(foodVoucherBalance))}</p></div>
     </section>
     <section class="section">
       <h2>Onde a grana foi</h2>

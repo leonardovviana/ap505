@@ -84,15 +84,6 @@ function inferCategory(message: string): Category {
 
 function inferPayment(message: string) {
   const normalized = message.toLowerCase();
-  if (
-    normalized.includes("vale alimentação") ||
-    normalized.includes("vale alimentacao") ||
-    normalized.includes("ticket alimentação") ||
-    normalized.includes("ticket alimentacao") ||
-    /\bva\b/.test(normalized)
-  ) {
-    return "Vale alimentação";
-  }
   if (normalized.includes("pix")) return "Pix";
   if (normalized.includes("débito") || normalized.includes("debito")) return "Débito";
   if (normalized.includes("crédito") || normalized.includes("credito") || normalized.includes("cartão")) {
@@ -145,15 +136,6 @@ function inferEntryType(message: string): "expense" | "income" {
 
 function inferIncomeKind(message: string): IncomeKind {
   const normalized = message.toLowerCase();
-  if (
-    normalized.includes("vale alimentação") ||
-    normalized.includes("vale alimentacao") ||
-    normalized.includes("ticket alimentação") ||
-    normalized.includes("ticket alimentacao") ||
-    /\bva\b/.test(normalized)
-  ) {
-    return "food_voucher";
-  }
   return normalized.includes("salario") || normalized.includes("salário") ? "salary" : "extra";
 }
 
@@ -174,7 +156,7 @@ function cleanDescription(message: string, memberName: string, fallback: string)
   description = description
     .replace(new RegExp(memberName, "i"), "")
     .replace(
-      /\b(eu|gastei|gastou|paguei|pagou|comprei|comprou|recebi|recebeu|entrada|entrou|caiu|hoje|ontem|no|na|em|de|com|r\$)\b/gi,
+      /\b(eu|gastei|gastou|paguei|pagou|comprei|comprou|recebi|recebeu|entrada|entrou|caiu|hoje|ontem|no|na|em|de|com|r\$|vale|alimentacao|alimentação|ticket)\b/gi,
       " ",
     )
     .replace(/\b(pix|débito|debito|crédito|credito|cartão|cartao|dinheiro)\b/gi, " ")
@@ -196,7 +178,7 @@ export function interpretExpenseMessage(
 
   const member = inferMember(message, currentUser, coupleMembers);
   const payment = inferPayment(message);
-  const category = payment === "Vale alimentação" ? "Alimentação" : inferCategory(message);
+  const category = inferCategory(message);
   const expenseDate = inferDate(message);
 
   return parsedExpenseSchema.parse({

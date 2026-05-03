@@ -4,18 +4,6 @@ export function sumIncomes(incomes: IncomeRow[]) {
   return incomes.reduce((total, income) => total + Number(income.amount), 0);
 }
 
-export function sumSpendableIncomes(incomes: IncomeRow[]) {
-  return incomes
-    .filter((income) => income.kind !== "food_voucher")
-    .reduce((total, income) => total + Number(income.amount), 0);
-}
-
-export function sumFoodVoucherIncomes(incomes: IncomeRow[]) {
-  return incomes
-    .filter((income) => income.kind === "food_voucher")
-    .reduce((total, income) => total + Number(income.amount), 0);
-}
-
 export function incomesByMember(incomes: IncomeRow[], members: CoupleMember[]) {
   return members.map((member) => ({
     name: member.display_name,

@@ -8,14 +8,8 @@ import { SummaryCard } from "@/components/summary-card";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { requireCouple } from "@/lib/auth/context";
-import { sumFoodVoucherExpenses, sumSpendableExpenses } from "@/lib/expenses/summary";
-import {
-  dominantIncomeKind,
-  incomesByKind,
-  incomesByMember,
-  sumFoodVoucherIncomes,
-  sumSpendableIncomes,
-} from "@/lib/incomes/summary";
+import { sumExpenses } from "@/lib/expenses/summary";
+import { dominantIncomeKind, incomesByKind, incomesByMember, sumIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart, toISODate } from "@/lib/utils";
 import type { ExpenseRow, IncomeRow } from "@/types/app";
 import { incomeKindLabels, incomeKinds } from "@/types/app";
@@ -57,12 +51,9 @@ export default async function IncomesPage({
 
   const incomes = (incomesData ?? []) as IncomeRow[];
   const expenses = (expensesData ?? []) as ExpenseRow[];
-  const totalIncome = sumSpendableIncomes(incomes);
-  const totalExpenses = sumSpendableExpenses(expenses);
-  const foodVoucherIncome = sumFoodVoucherIncomes(incomes);
-  const foodVoucherExpenses = sumFoodVoucherExpenses(expenses);
+  const totalIncome = sumIncomes(incomes);
+  const totalExpenses = sumExpenses(expenses);
   const balance = totalIncome - totalExpenses;
-  const foodVoucherBalance = foodVoucherIncome - foodVoucherExpenses;
   const byMember = incomesByMember(incomes, members);
   const byKind = incomesByKind(incomes);
   const topKind = dominantIncomeKind(incomes);
@@ -89,18 +80,18 @@ export default async function IncomesPage({
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
                 {balance >= 0
-                  ? `Entraram ${formatCurrency(totalIncome)} em salário/extras. Vale alimentação fica em outro saldo.`
-                  : `Faltam ${formatCurrency(Math.abs(balance))} para cobrir as saídas fora do vale.`}
+                  ? `Entraram ${formatCurrency(totalIncome)}. Tudo entra no mesmo saldo.`
+                  : `Faltam ${formatCurrency(Math.abs(balance))} para cobrir as saídas.`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="surface-chip">
                 <Banknote size={14} />
-                {formatCurrency(totalIncome)} salário + extras
+                {formatCurrency(totalIncome)} recebidos
               </span>
               <span className="surface-chip">
                 <WalletCards size={14} />
-                Saídas normais {formatCurrency(totalExpenses)}
+                Gastos {formatCurrency(totalExpenses)}
               </span>
               <span className="surface-chip">
                 <UsersRound size={14} />
@@ -117,16 +108,6 @@ export default async function IncomesPage({
               <p className="mt-2 text-3xl font-black text-white">{formatCurrency(balance)}</p>
               <p className="mt-1 text-sm font-medium text-white/72">
                 Entradas normais {formatCurrency(totalIncome)} · saídas normais {formatCurrency(totalExpenses)}
-              </p>
-            </div>
-
-            <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                Saldo alimentação
-              </p>
-              <p className="mt-2 text-2xl font-black text-white">{formatCurrency(foodVoucherBalance)}</p>
-              <p className="mt-1 text-sm font-medium text-white/72">
-                Vale recebido {formatCurrency(foodVoucherIncome)} · usado {formatCurrency(foodVoucherExpenses)}
               </p>
             </div>
 
@@ -156,18 +137,18 @@ export default async function IncomesPage({
         </div>
       </section>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-4">
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
         <SummaryCard
-          label="Salário + extras"
+          label="Recebido"
           value={formatCurrency(totalIncome)}
-          hint="Não inclui vale alimentação"
+          hint="Entradas do mês"
           tone="green"
           icon={<Banknote size={18} />}
         />
         <SummaryCard
-          label="Saídas normais"
+          label="Gastos"
           value={formatCurrency(totalExpenses)}
-          hint="Sem gastos pagos no vale"
+          hint="Saídas do mês"
           tone="purple"
           icon={<WalletCards size={18} />}
         />
@@ -178,13 +159,6 @@ export default async function IncomesPage({
           tone={balance >= 0 ? "green" : "purple"}
           icon={<UsersRound size={18} />}
         />
-        <SummaryCard
-          label="Saldo alimentação"
-          value={formatCurrency(foodVoucherBalance)}
-          hint="Vale/ticket menos uso em alimentação"
-          tone={foodVoucherBalance >= 0 ? "green" : "purple"}
-          icon={<WalletCards size={18} />}
-        />
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
@@ -193,9 +167,9 @@ export default async function IncomesPage({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Nova entrada</p>
-              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Salário, extra ou vale</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Salário ou extra</h2>
               <p className="mt-2 text-sm font-medium leading-6 text-muted">
-                Registre o que entrou e acompanhe o saldo junto com os gastos.
+                Registre o que entrou e acompanhe o saldo total junto com os gastos.
               </p>
             </div>
             <span className="grid h-11 w-11 place-items-center rounded-[8px] bg-ap-mint text-ap-green ring-1 ring-emerald-100">

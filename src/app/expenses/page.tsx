@@ -10,10 +10,8 @@ import {
   dominantCategory,
   expensesByMember,
   sumExpenses,
-  sumFoodVoucherExpenses,
-  sumSpendableExpenses,
 } from "@/lib/expenses/summary";
-import { sumFoodVoucherIncomes, sumSpendableIncomes } from "@/lib/incomes/summary";
+import { sumIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthStart, nextMonthStart, monthLabel } from "@/lib/utils";
 import { categories, type Category, type ExpenseRow, type IncomeRow } from "@/types/app";
 
@@ -67,9 +65,7 @@ export default async function ExpensesPage({
   const incomes = (monthIncomes ?? []) as IncomeRow[];
   const monthExpenseTotals = (allMonthExpenses ?? []) as ExpenseRow[];
   const total = sumExpenses(expenses);
-  const spendableBalance = sumSpendableIncomes(incomes) - sumSpendableExpenses(monthExpenseTotals);
-  const foodVoucherBalance = sumFoodVoucherIncomes(incomes) - sumFoodVoucherExpenses(monthExpenseTotals);
-  const filteredFoodVoucherTotal = sumFoodVoucherExpenses(expenses);
+  const balance = sumIncomes(incomes) - sumExpenses(monthExpenseTotals);
   const byMember = expensesByMember(expenses, members);
   const topCategory = dominantCategory(expenses);
   const latestExpense = expenses[0];
@@ -111,11 +107,7 @@ export default async function ExpensesPage({
               </span>
               <span className="surface-chip">
                 <WalletCards size={14} />
-                Saldo {formatCurrency(spendableBalance)}
-              </span>
-              <span className="surface-chip">
-                <WalletCards size={14} />
-                Alimentação {formatCurrency(foodVoucherBalance)}
+                Saldo {formatCurrency(balance)}
               </span>
             </div>
           </div>
@@ -149,15 +141,15 @@ export default async function ExpensesPage({
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
                   Saldo disponível
                 </p>
-                <p className="mt-2 text-xl font-black text-white">{formatCurrency(spendableBalance)}</p>
-                <p className="mt-1 text-sm font-medium text-white/72">salário + extras menos gastos normais</p>
+                <p className="mt-2 text-xl font-black text-white">{formatCurrency(balance)}</p>
+                <p className="mt-1 text-sm font-medium text-white/72">saldo total do mês</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-5">
+      <div className="mt-5 grid gap-3 md:grid-cols-4">
         <SummaryCard
           label="Total filtrado"
           value={formatCurrency(total)}
@@ -178,20 +170,6 @@ export default async function ExpensesPage({
           tone="purple"
           icon={<CircleDollarSign size={18} />}
         />
-        <SummaryCard
-          label="Pago no vale"
-          value={formatCurrency(filteredFoodVoucherTotal)}
-          hint="Só quando a lista tem vale alimentação"
-          tone="green"
-          icon={<WalletCards size={18} />}
-        />
-        <SummaryCard
-          label="Saldo do vale"
-          value={formatCurrency(foodVoucherBalance)}
-          hint="Entradas de vale menos gastos no vale"
-          tone={foodVoucherBalance >= 0 ? "green" : "purple"}
-          icon={<WalletCards size={18} />}
-        />
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
@@ -202,7 +180,7 @@ export default async function ExpensesPage({
               <p className="section-title">Novo gasto</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Lança sem drama</h2>
               <p className="mt-2 text-sm font-medium leading-6 text-muted">
-                Vale alimentação fica separado e só entra em Alimentação.
+                Registre o gasto e o saldo total se ajusta automaticamente.
               </p>
             </div>
             <span className="grid h-11 w-11 place-items-center rounded-[8px] bg-ap-mint text-ap-green ring-1 ring-emerald-100">

@@ -102,18 +102,10 @@ export function ChatExpenseInput() {
 
           {payload.result.type === "expense" ? (
             <div className="mt-3">
-              <Field
-                label="Categoria"
-                hint={
-                  payload.result.payment_method === "Vale alimentação"
-                    ? "Vale alimentação só pode ser usado em Alimentação."
-                    : "Pode corrigir antes de confirmar."
-                }
-              >
+              <Field label="Categoria" hint="Pode corrigir antes de confirmar.">
                 <Select
                   value={payload.result.category}
                   onChange={(event) => updateExpenseCategory(event.target.value as Category)}
-                  disabled={payload.result.payment_method === "Vale alimentação"}
                 >
                   {categories.map((category) => (
                     <option key={category}>{category}</option>

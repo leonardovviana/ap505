@@ -145,7 +145,7 @@ export type Database = {
           created_by: string;
           amount: number;
           description: string;
-          kind: "salary" | "extra" | "food_voucher";
+          kind: "salary" | "extra";
           income_date: string;
           notes: string | null;
           created_at: string;
@@ -158,7 +158,7 @@ export type Database = {
           created_by: string;
           amount: number;
           description: string;
-          kind?: "salary" | "extra" | "food_voucher";
+          kind?: "salary" | "extra";
           income_date: string;
           notes?: string | null;
           created_at?: string;
@@ -167,7 +167,7 @@ export type Database = {
         Update: {
           amount?: number;
           description?: string;
-          kind?: "salary" | "extra" | "food_voucher";
+          kind?: "salary" | "extra";
           income_date?: string;
           notes?: string | null;
           updated_at?: string;

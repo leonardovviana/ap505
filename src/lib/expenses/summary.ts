@@ -5,22 +5,6 @@ export function sumExpenses(expenses: ExpenseRow[]) {
   return expenses.reduce((total, expense) => total + Number(expense.amount), 0);
 }
 
-export function isFoodVoucherExpense(expense: Pick<ExpenseRow, "payment_method">) {
-  return expense.payment_method === "Vale alimentação";
-}
-
-export function sumSpendableExpenses(expenses: ExpenseRow[]) {
-  return expenses
-    .filter((expense) => !isFoodVoucherExpense(expense))
-    .reduce((total, expense) => total + Number(expense.amount), 0);
-}
-
-export function sumFoodVoucherExpenses(expenses: ExpenseRow[]) {
-  return expenses
-    .filter(isFoodVoucherExpense)
-    .reduce((total, expense) => total + Number(expense.amount), 0);
-}
-
 export function expensesByCategory(expenses: ExpenseRow[]) {
   return categories
     .map((category) => ({

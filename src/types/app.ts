@@ -8,9 +8,9 @@ export type Category =
   | "Contas"
   | "Outros";
 
-export type PaymentMethod = "Pix" | "Débito" | "Crédito" | "Dinheiro" | "Vale alimentação" | "Outro";
+export type PaymentMethod = "Pix" | "Débito" | "Crédito" | "Dinheiro" | "Outro";
 
-export type IncomeKind = "salary" | "extra" | "food_voucher";
+export type IncomeKind = "salary" | "extra";
 
 export type CoupleMember = {
   id: string;
@@ -113,14 +113,12 @@ export const paymentMethods: PaymentMethod[] = [
   "Débito",
   "Crédito",
   "Dinheiro",
-  "Vale alimentação",
   "Outro",
 ];
 
-export const incomeKinds: IncomeKind[] = ["salary", "extra", "food_voucher"];
+export const incomeKinds: IncomeKind[] = ["salary", "extra"];
 
 export const incomeKindLabels: Record<IncomeKind, string> = {
   salary: "Salário",
   extra: "Entrada extra",
-  food_voucher: "Vale alimentação",
 };

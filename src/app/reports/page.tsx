@@ -9,10 +9,9 @@ import {
   dominantCategory,
   expensesByCategory,
   expensesByMember,
-  sumFoodVoucherExpenses,
-  sumSpendableExpenses,
+  sumExpenses,
 } from "@/lib/expenses/summary";
-import { sumFoodVoucherIncomes, sumSpendableIncomes } from "@/lib/incomes/summary";
+import { sumIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart } from "@/lib/utils";
 import type { ExpenseRow, IncomeRow } from "@/types/app";
 
@@ -63,12 +62,9 @@ export default async function ReportsPage({
 
   const expenses = (data ?? []) as ExpenseRow[];
   const incomes = (incomesData ?? []) as IncomeRow[];
-  const total = sumSpendableExpenses(expenses);
-  const totalIncome = sumSpendableIncomes(incomes);
-  const foodVoucherIncome = sumFoodVoucherIncomes(incomes);
-  const foodVoucherExpenses = sumFoodVoucherExpenses(expenses);
+  const total = sumExpenses(expenses);
+  const totalIncome = sumIncomes(incomes);
   const balance = totalIncome - total;
-  const foodVoucherBalance = foodVoucherIncome - foodVoucherExpenses;
   const byCategory = expensesByCategory(expenses);
   const byMember = expensesByMember(expenses, members);
   const topCategory = dominantCategory(expenses);
@@ -98,7 +94,7 @@ export default async function ReportsPage({
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
                 {balance >= 0
                   ? `Saldo disponível ${formatCurrency(balance)} em ${monthLabel(start)}.`
-                  : `Faltaram ${formatCurrency(Math.abs(balance))} fora do vale em ${monthLabel(start)}.`}
+                  : `Faltaram ${formatCurrency(Math.abs(balance))} em ${monthLabel(start)}.`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -114,10 +110,6 @@ export default async function ReportsPage({
                 <WalletCards size={14} />
                 Saldo {formatCurrency(balance)}
               </span>
-              <span className="surface-chip">
-                <WalletCards size={14} />
-                Alimentação {formatCurrency(foodVoucherBalance)}
-              </span>
             </div>
           </div>
 
@@ -129,16 +121,6 @@ export default async function ReportsPage({
               <p className="mt-2 text-3xl font-black text-white">{formatCurrency(balance)}</p>
               <p className="mt-1 text-sm font-medium text-white/72">
                 Entradas normais {formatCurrency(totalIncome)} · saídas normais {formatCurrency(total)}
-              </p>
-            </div>
-
-            <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                Saldo alimentação
-              </p>
-              <p className="mt-2 text-2xl font-black text-white">{formatCurrency(foodVoucherBalance)}</p>
-              <p className="mt-1 text-sm font-medium text-white/72">
-                Vale recebido {formatCurrency(foodVoucherIncome)} · usado {formatCurrency(foodVoucherExpenses)}
               </p>
             </div>
 
@@ -182,16 +164,16 @@ export default async function ReportsPage({
         </div>
       </section>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-4">
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
         <SummaryCard
-          label="Recebido normal"
+          label="Recebido"
           value={formatCurrency(totalIncome)}
           hint={monthLabel(start)}
           tone="green"
           icon={<WalletCards size={18} />}
         />
         <SummaryCard
-          label="Gasto normal"
+          label="Gasto"
           value={formatCurrency(total)}
           hint={topCategory ? `Maior categoria: ${topCategory}` : "Sem gastos"}
           tone="purple"
@@ -202,13 +184,6 @@ export default async function ReportsPage({
           value={formatCurrency(balance)}
           hint={balance >= 0 ? "Fechou positivo" : "Fechou negativo"}
           tone={balance >= 0 ? "green" : "purple"}
-          icon={<WalletCards size={18} />}
-        />
-        <SummaryCard
-          label="Saldo alimentação"
-          value={formatCurrency(foodVoucherBalance)}
-          hint="Vale/ticket separado do saldo normal"
-          tone={foodVoucherBalance >= 0 ? "green" : "purple"}
           icon={<WalletCards size={18} />}
         />
       </div>

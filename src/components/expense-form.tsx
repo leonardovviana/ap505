@@ -6,8 +6,7 @@ import { MemberSwitcher } from "@/components/member-switcher";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { toISODate } from "@/lib/utils";
-import { categories, paymentMethods, type CoupleMember, type PaymentMethod } from "@/types/app";
-import { useState } from "react";
+import { categories, paymentMethods, type CoupleMember } from "@/types/app";
 
 export function ExpenseForm({
   members,
@@ -18,10 +17,6 @@ export function ExpenseForm({
   currentMemberId?: string | null;
   error?: string;
 }) {
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
-  const [category, setCategory] = useState("Alimentação");
-  const isFoodVoucher = paymentMethod === "Vale alimentação";
-
   return (
     <form action={createExpenseAction} className="mt-5 grid gap-4">
       <Field label="Valor">
@@ -31,13 +26,8 @@ export function ExpenseForm({
         <Input name="description" placeholder="Mercado" required />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Categoria" hint={isFoodVoucher ? "Vale alimentação só pode ser usado em Alimentação." : undefined}>
-          <Select
-            name="category"
-            value={isFoodVoucher ? "Alimentação" : category}
-            onChange={(event) => setCategory(event.target.value)}
-            disabled={isFoodVoucher}
-          >
+        <Field label="Categoria">
+          <Select name="category" defaultValue="Alimentação">
             {categories.map((item) => (
               <option key={item}>{item}</option>
             ))}
@@ -52,11 +42,7 @@ export function ExpenseForm({
           <Input name="expense_date" type="date" defaultValue={toISODate()} required />
         </Field>
         <Field label="Pagamento">
-          <Select
-            name="payment_method"
-            value={paymentMethod}
-            onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod | "")}
-          >
+          <Select name="payment_method" defaultValue="">
             <option value="">Não lembro</option>
             {paymentMethods.map((method) => (
               <option key={method}>{method}</option>
@@ -67,7 +53,6 @@ export function ExpenseForm({
       <Field label="Observação" hint="Opcional, sem burocracia.">
         <Textarea name="notes" placeholder="Ex: compra da semana" />
       </Field>
-      {isFoodVoucher ? <input type="hidden" name="category" value="Alimentação" /> : null}
       {error ? <p className="rounded-[8px] bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
       <Button type="submit" className="justify-between">
         Salvar gasto

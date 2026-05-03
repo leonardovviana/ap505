@@ -29,12 +29,6 @@ function cleanPayment(value: string): PaymentMethod | null {
   return paymentMethods.includes(value as PaymentMethod) ? (value as PaymentMethod) : "Outro";
 }
 
-function foodVoucherCategoryError(paymentMethod: PaymentMethod | null, category: Category) {
-  return paymentMethod === "Vale alimentação" && category !== "Alimentação"
-    ? "Vale alimentação só pode ser usado com a categoria Alimentação."
-    : null;
-}
-
 function cleanIncomeKind(value: string): IncomeKind {
   return incomeKinds.includes(value as IncomeKind) ? (value as IncomeKind) : "salary";
 }
@@ -216,9 +210,6 @@ export async function createExpenseAction(formData: FormData) {
   const memberId = asString(formData.get("member_id"));
   const category = cleanCategory(asString(formData.get("category"), "Outros"));
   const paymentMethod = cleanPayment(asString(formData.get("payment_method")));
-  const categoryError = foodVoucherCategoryError(paymentMethod, category);
-
-  if (categoryError) redirect(`/expenses?error=${encodeURIComponent(categoryError)}`);
 
   const { error } = await supabase.from("expenses").insert({
     couple_id: couple.id,
