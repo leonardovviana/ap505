@@ -30,10 +30,6 @@ export function dominantCategory(expenses: ExpenseRow[]) {
   return sorted[0]?.name as Category | undefined;
 }
 
-export function monthlyBudget(budgets: BudgetRow[]) {
-  return budgets.find((budget) => budget.scope === "monthly" && !budget.category);
-}
-
 export function categoryBudget(budgets: BudgetRow[], category: string) {
   return budgets.find((budget) => budget.scope === "category" && budget.category === category);
 }

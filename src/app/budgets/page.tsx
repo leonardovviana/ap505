@@ -7,12 +7,12 @@ import { SummaryCard } from "@/components/summary-card";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { requireCouple } from "@/lib/auth/context";
-import { categoryBudget, monthlyBudget, sumExpenses } from "@/lib/expenses/summary";
+import { categoryBudget, sumExpenses } from "@/lib/expenses/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart } from "@/lib/utils";
 import { categories, type BudgetRow, type ExpenseRow } from "@/types/app";
 
 export const metadata = {
-  title: "Metas",
+  title: "Metas por categoria",
 };
 
 export default async function BudgetsPage({
@@ -31,9 +31,8 @@ export default async function BudgetsPage({
 
   const rows = (budgets ?? []) as BudgetRow[];
   const monthExpenses = (expenses ?? []) as ExpenseRow[];
+  const categoryRows = rows.filter((budget) => budget.scope === "category");
   const total = sumExpenses(monthExpenses);
-  const monthBudget = monthlyBudget(rows);
-  const remaining = monthBudget ? Number(monthBudget.amount) - total : 0;
 
   return (
     <AppShell
@@ -48,14 +47,14 @@ export default async function BudgetsPage({
           <div className="space-y-5">
             <span className="surface-chip">
               <Target size={14} />
-              Metas do mês
+              Metas por categoria
             </span>
             <div className="max-w-2xl space-y-3">
               <h1 className="text-4xl font-black tracking-normal text-white md:text-5xl">
-                Bora ver se o mês tá tranquilo?
+                Ajusta os tetos por categoria
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
-                Aqui vocês ajustam o teto do mês e os limites por categoria sem virar planilha.
+                Aqui vocês definem e acompanham os limites por categoria sem depender de uma meta geral do mês.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -66,7 +65,7 @@ export default async function BudgetsPage({
               </span>
               <span className="surface-chip">
                 <BadgeDollarSign size={14} />
-                {monthBudget ? formatCurrency(Number(monthBudget.amount)) : "Sem meta mensal"}
+                {categoryRows.length ? `${categoryRows.length} metas ativas` : "Sem metas salvas"}
               </span>
             </div>
           </div>
@@ -77,11 +76,7 @@ export default async function BudgetsPage({
                 Resumo rápido
               </p>
               <p className="mt-2 text-3xl font-black text-white">{formatCurrency(total)}</p>
-              <p className="mt-1 text-sm font-medium text-white/72">
-                {monthBudget
-                  ? `${Math.max(0, remaining) >= 0 ? "Restam" : "Passaram"} ${formatCurrency(Math.abs(remaining))} da meta`
-                  : "Ainda não existe uma meta mensal cadastrada."}
-              </p>
+              <p className="mt-1 text-sm font-medium text-white/72">Gasto total acumulado no mês.</p>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
@@ -93,10 +88,10 @@ export default async function BudgetsPage({
               </div>
               <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                  Categorias
+                  Metas salvas
                 </p>
                 <p className="mt-2 text-xl font-black text-white">
-                  {rows.filter((budget) => budget.scope === "category").length}
+                  {categoryRows.length}
                 </p>
                 <p className="mt-1 text-sm font-medium text-white/72">metas por categoria</p>
               </div>
@@ -114,15 +109,15 @@ export default async function BudgetsPage({
           icon={<WalletCards size={18} />}
         />
         <SummaryCard
-          label="Meta mensal"
-          value={monthBudget ? formatCurrency(Number(monthBudget.amount)) : "Sem meta"}
-          hint={monthBudget ? "Teto geral do mês" : "Defina uma meta para começar"}
+          label="Metas por categoria"
+          value={String(categoryRows.length)}
+          hint={categoryRows.length ? "Categorias acompanhadas" : "Defina uma meta para começar"}
           icon={<Target size={18} />}
         />
         <SummaryCard
-          label="Saldo da meta"
-          value={monthBudget ? formatCurrency(Math.max(0, remaining)) : "—"}
-          hint={monthBudget ? (remaining >= 0 ? "Ainda sob controle" : "Passou do limite") : "Sem saldo calculado"}
+          label="Lançamentos"
+          value={String(monthExpenses.length)}
+          hint="Movimentações no mês"
           tone="purple"
           icon={<BadgeDollarSign size={18} />}
         />
@@ -134,33 +129,14 @@ export default async function BudgetsPage({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Configurar metas</p>
-              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Ajusta o limite sem confusão</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Ajusta o limite por categoria</h2>
               <p className="mt-2 text-sm font-medium leading-6 text-muted">
-                Primeiro define a meta geral, depois as metas por categoria que fazem sentido para vocês.
+                Escolhe uma categoria e define o teto que faz sentido para o mês.
               </p>
             </div>
           </div>
 
           <form action={upsertBudgetAction} className="mt-5 grid gap-4">
-            <input type="hidden" name="scope" value="monthly" />
-            <input type="hidden" name="month" value={start} />
-            <Field label={`Meta geral de ${monthLabel(start)}`}>
-              <Input
-                name="amount"
-                inputMode="decimal"
-                placeholder="2500,00"
-                defaultValue={monthBudget?.amount ?? ""}
-                required
-              />
-            </Field>
-            <Button type="submit" className="justify-between">
-              Salvar meta mensal
-              <Target size={16} />
-            </Button>
-          </form>
-
-          <form action={upsertBudgetAction} className="mt-6 grid gap-4 border-t border-border pt-6">
-            <input type="hidden" name="scope" value="category" />
             <input type="hidden" name="month" value={start} />
             <Field label="Categoria">
               <Select name="category" defaultValue="Alimentação">
@@ -176,7 +152,7 @@ export default async function BudgetsPage({
               <p className="rounded-[8px] bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p>
             ) : null}
             <Button type="submit" className="justify-between">
-              Salvar meta da categoria
+              Salvar meta
               <BadgeDollarSign size={16} />
             </Button>
           </form>
@@ -187,26 +163,24 @@ export default async function BudgetsPage({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Acompanhamento</p>
-              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Onde a meta está indo</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Onde cada categoria está indo</h2>
             </div>
-            <p className="text-xs font-bold text-muted">{rows.length} metas salvas</p>
+            <p className="text-xs font-bold text-muted">{categoryRows.length} metas salvas</p>
           </div>
           <div className="mt-5 grid gap-3">
-            {monthBudget ? (
-              <BudgetProgress label="Meta mensal" spent={total} budget={Number(monthBudget.amount)} />
-            ) : (
-              <EmptyState title="Sem meta mensal">
-                Coloca uma meta em “Metas” para saber se o mês tá suave.
-              </EmptyState>
-            )}
             {categories.map((category) => {
-              const budget = categoryBudget(rows, category);
+              const budget = categoryBudget(categoryRows, category);
               if (!budget) return null;
               const spent = monthExpenses
                 .filter((expense) => expense.category === category)
                 .reduce((sum, expense) => sum + Number(expense.amount), 0);
               return <BudgetProgress key={category} label={category} spent={spent} budget={Number(budget.amount)} />;
             })}
+            {!categoryRows.length ? (
+              <EmptyState title="Sem metas por categoria">
+                Crie a primeira meta para acompanhar os tetos do mês.
+              </EmptyState>
+            ) : null}
           </div>
         </section>
       </div>

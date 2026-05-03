@@ -291,15 +291,14 @@ export async function deleteExpenseAction(formData: FormData) {
 
 export async function upsertBudgetAction(formData: FormData) {
   const { supabase, user, couple } = await requireCouple();
-  const scope = asString(formData.get("scope"), "monthly") as "monthly" | "category";
-  const category = scope === "category" ? cleanCategory(asString(formData.get("category"))) : "";
+  const category = cleanCategory(asString(formData.get("category")));
   const amount = normalizeMoneyInput(formData.get("amount"));
   const month = asString(formData.get("month"), `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-01`);
 
   const { error } = await supabase.from("budgets").upsert(
     {
       couple_id: couple.id,
-      scope,
+      scope: "category",
       category,
       amount,
       month,

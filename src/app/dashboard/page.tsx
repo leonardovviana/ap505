@@ -1,22 +1,19 @@
 import { Banknote, BadgeDollarSign, CircleDollarSign, WalletCards } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { BudgetProgress } from "@/components/budget-progress";
 import { EmptyState } from "@/components/empty-state";
 import { ExpenseCard } from "@/components/expense-card";
 import { SpendingChart } from "@/components/spending-chart";
 import { SummaryCard } from "@/components/summary-card";
 import { requireCouple } from "@/lib/auth/context";
 import {
-  dominantCategory,
   expensesByCategory,
   expensesByMember,
-  monthlyBudget,
   sumExpenses,
 } from "@/lib/expenses/summary";
 import { dominantIncomeKind, incomesByMember, sumIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart } from "@/lib/utils";
 import { incomeKindLabels } from "@/types/app";
-import type { BudgetRow, ExpenseRow, IncomeRow } from "@/types/app";
+import type { ExpenseRow, IncomeRow } from "@/types/app";
 
 export const metadata = {
   title: "Resumo do casal",
@@ -32,7 +29,7 @@ export default async function DashboardPage({
   const start = monthStart();
   const end = nextMonthStart();
 
-  const [{ data: expenses }, { data: incomes }, { data: budgets }] = await Promise.all([
+  const [{ data: expenses }, { data: incomes }] = await Promise.all([
     supabase
       .from("expenses")
       .select("*, couple_members(display_name)")
@@ -50,12 +47,10 @@ export default async function DashboardPage({
       .order("income_date", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(50),
-    supabase.from("budgets").select("*").eq("couple_id", couple.id).eq("month", start),
   ]);
 
   const monthExpenses = (expenses ?? []) as ExpenseRow[];
   const monthIncomes = (incomes ?? []) as IncomeRow[];
-  const monthBudgets = (budgets ?? []) as BudgetRow[];
 
   const totalExpenses = sumExpenses(monthExpenses);
   const totalIncome = sumIncomes(monthIncomes);
@@ -63,9 +58,7 @@ export default async function DashboardPage({
   const byCategory = expensesByCategory(monthExpenses);
   const byExpenseMember = expensesByMember(monthExpenses, members);
   const byIncomeMember = incomesByMember(monthIncomes, members);
-  const topCategory = dominantCategory(monthExpenses);
   const topIncomeKind = dominantIncomeKind(monthIncomes);
-  const budget = monthlyBudget(monthBudgets);
   const leadingIncomeMember = [...byIncomeMember].sort((a, b) => b.value - a.value)[0];
   const leadingExpenseMember = [...byExpenseMember].sort((a, b) => b.value - a.value)[0];
   const latestIncome = monthIncomes[0];
@@ -106,7 +99,7 @@ export default async function DashboardPage({
               </span>
               <span className="surface-chip">
                 <BadgeDollarSign size={14} />
-                {topCategory ?? "Sem categoria"}
+                {byCategory.length ? `${byCategory.length} categorias ativas` : "Sem categorias"}
               </span>
             </div>
           </div>
@@ -186,11 +179,6 @@ export default async function DashboardPage({
         </section>
 
         <section className="grid gap-4">
-          {budget ? (
-            <BudgetProgress label="Meta mensal" spent={totalExpenses} budget={Number(budget.amount)} />
-          ) : (
-            <EmptyState title="Sem meta mensal">Ainda não tem uma meta mensal cadastrada.</EmptyState>
-          )}
           <div className="soft-card rounded-[8px] p-4">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
