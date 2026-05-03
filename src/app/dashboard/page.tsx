@@ -176,7 +176,7 @@ export default async function DashboardPage() {
           {budget ? (
             <BudgetProgress label="Meta mensal" spent={totalExpenses} budget={Number(budget.amount)} />
           ) : (
-            <EmptyState title="Sem meta mensal">Coloca uma meta em “Metas” pra saber se o mês tá suave.</EmptyState>
+            <EmptyState title="Sem meta mensal">Ainda não tem uma meta mensal cadastrada.</EmptyState>
           )}
           <div className="soft-card rounded-[8px] p-4">
             <div className="mb-4 flex items-center justify-between gap-3">

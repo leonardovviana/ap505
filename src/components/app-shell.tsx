@@ -12,7 +12,6 @@ const desktopLinks = [
   ["Entradas", "/entradas"],
   ["Gastos", "/expenses"],
   ["Chat", "/chat"],
-  ["Metas", "/budgets"],
   ["Relatórios", "/reports"],
   ["Ajustes", "/settings"],
 ];

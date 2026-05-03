@@ -224,17 +224,3 @@ export async function upsertBudgetAction(formData: FormData) {
   revalidatePath("/dashboard");
   redirect(error ? `/budgets?error=${encodeURIComponent(error.message)}` : "/budgets");
 }
-
-export async function updateProfileAction(formData: FormData) {
-  const { supabase, user } = await requireUser();
-  const fullName = asString(formData.get("full_name"));
-  const avatarUrl = asString(formData.get("avatar_url"));
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ full_name: fullName || null, avatar_url: avatarUrl || null })
-    .eq("id", user.id);
-
-  revalidatePath("/settings");
-  redirect(error ? `/settings?error=${encodeURIComponent(error.message)}` : "/settings");
-}
