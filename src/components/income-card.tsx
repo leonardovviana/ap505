@@ -5,7 +5,15 @@ import { formatCurrency } from "@/lib/utils";
 import { incomeKindLabels } from "@/types/app";
 import type { IncomeRow } from "@/types/app";
 
-export function IncomeCard({ income, canDelete = false }: { income: IncomeRow; canDelete?: boolean }) {
+export function IncomeCard({
+  income,
+  canDelete = false,
+  returnTo = "/entradas",
+}: {
+  income: IncomeRow;
+  canDelete?: boolean;
+  returnTo?: string;
+}) {
   return (
     <article className="overflow-hidden rounded-[8px] bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(246,248,251,0.94))] shadow-sm ring-1 ring-black/5">
       <div className="flex">
@@ -35,7 +43,8 @@ export function IncomeCard({ income, canDelete = false }: { income: IncomeRow; c
             {canDelete ? (
               <form action={deleteIncomeAction}>
                 <input type="hidden" name="id" value={income.id} />
-                <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Apagar entrada">
+                <input type="hidden" name="return_to" value={returnTo} />
+                <Button type="submit" variant="ghost" className="h-9 w-9 px-0" aria-label="Apagar entrada">
                   <Trash2 size={16} />
                 </Button>
               </form>

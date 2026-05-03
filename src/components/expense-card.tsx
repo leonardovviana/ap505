@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import type { ExpenseRow } from "@/types/app";
 
-export function ExpenseCard({ expense, canDelete = false }: { expense: ExpenseRow; canDelete?: boolean }) {
+export function ExpenseCard({
+  expense,
+  canDelete = false,
+  returnTo = "/expenses",
+}: {
+  expense: ExpenseRow;
+  canDelete?: boolean;
+  returnTo?: string;
+}) {
   return (
     <article className="overflow-hidden rounded-[8px] bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(246,248,251,0.94))] shadow-sm ring-1 ring-black/5">
       <div className="flex">
@@ -38,7 +46,8 @@ export function ExpenseCard({ expense, canDelete = false }: { expense: ExpenseRo
             {canDelete ? (
               <form action={deleteExpenseAction}>
                 <input type="hidden" name="id" value={expense.id} />
-                <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Apagar gasto">
+                <input type="hidden" name="return_to" value={returnTo} />
+                <Button type="submit" variant="ghost" className="h-9 w-9 px-0" aria-label="Apagar gasto">
                   <Trash2 size={16} />
                 </Button>
               </form>

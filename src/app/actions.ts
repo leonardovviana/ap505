@@ -33,6 +33,10 @@ function cleanIncomeKind(value: string): IncomeKind {
   return incomeKinds.includes(value as IncomeKind) ? (value as IncomeKind) : "salary";
 }
 
+function cleanReturnTo(value: string) {
+  return ["/dashboard", "/chat", "/entradas", "/expenses"].includes(value) ? value : "/dashboard";
+}
+
 export async function signInAction(formData: FormData) {
   const email = asString(formData.get("email")).toLowerCase();
   const password = asString(formData.get("password"));
@@ -122,10 +126,13 @@ export async function createIncomeAction(formData: FormData) {
 export async function deleteIncomeAction(formData: FormData) {
   const { supabase } = await requireCouple();
   const id = asString(formData.get("id"));
-  await supabase.from("incomes").delete().eq("id", id);
+  const returnTo = cleanReturnTo(asString(formData.get("return_to"), "/entradas"));
+  const { data, error } = await supabase.from("incomes").delete().eq("id", id).select("id");
   revalidatePath("/dashboard");
   revalidatePath("/chat");
   revalidatePath("/entradas");
+  const message = error?.message ?? (!data?.length ? "Não encontrei essa entrada para apagar." : "");
+  redirect(message ? `${returnTo}?error=${encodeURIComponent(message)}` : returnTo);
 }
 
 async function notifyPartner(coupleId: string, amount: number, category: string) {
@@ -216,10 +223,13 @@ export async function createFinancialEntryFromParsedAction(parsed: ParsedFinanci
 export async function deleteExpenseAction(formData: FormData) {
   const { supabase } = await requireCouple();
   const id = asString(formData.get("id"));
-  await supabase.from("expenses").delete().eq("id", id);
+  const returnTo = cleanReturnTo(asString(formData.get("return_to"), "/expenses"));
+  const { data, error } = await supabase.from("expenses").delete().eq("id", id).select("id");
   revalidatePath("/dashboard");
   revalidatePath("/chat");
   revalidatePath("/expenses");
+  const message = error?.message ?? (!data?.length ? "Não encontrei esse gasto para apagar." : "");
+  redirect(message ? `${returnTo}?error=${encodeURIComponent(message)}` : returnTo);
 }
 
 export async function upsertBudgetAction(formData: FormData) {

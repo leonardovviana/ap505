@@ -16,8 +16,13 @@ export const metadata = {
   title: "Resumo do casal",
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { supabase, couple, members } = await requireCouple();
+  const { error } = await searchParams;
   const start = monthStart();
   const end = nextMonthStart();
 
@@ -136,6 +141,8 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {error ? <p className="mt-4 rounded-[8px] bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
+
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         <SummaryCard
           label="Entradas do mês"
@@ -187,7 +194,7 @@ export default async function DashboardPage() {
             </div>
             <div className="grid gap-3">
               {monthExpenses.slice(0, 4).map((expense) => (
-                <ExpenseCard key={expense.id} expense={expense} canDelete />
+                <ExpenseCard key={expense.id} expense={expense} canDelete returnTo="/dashboard" />
               ))}
               {!monthExpenses.length ? (
                 <EmptyState title="Nada lançado">Bora lançar o primeiro gasto?</EmptyState>

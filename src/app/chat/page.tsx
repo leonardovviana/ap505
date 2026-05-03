@@ -15,8 +15,13 @@ type RecentEntry =
   | { type: "expense"; created_at: string; entry: ExpenseRow }
   | { type: "income"; created_at: string; entry: IncomeRow };
 
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { supabase, couple, members } = await requireCouple();
+  const { error } = await searchParams;
   const [{ data: expensesData }, { data: incomesData }] = await Promise.all([
     supabase
       .from("expenses")
@@ -93,6 +98,8 @@ export default async function ChatPage() {
         </div>
       </section>
 
+      {error ? <p className="mt-4 rounded-[8px] bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
+
       <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <ChatExpenseInput />
 
@@ -110,9 +117,9 @@ export default async function ChatPage() {
           <div className="mt-5 grid gap-3">
             {entries.map((item) =>
               item.type === "income" ? (
-                <IncomeCard key={`income-${item.entry.id}`} income={item.entry} canDelete />
+                <IncomeCard key={`income-${item.entry.id}`} income={item.entry} canDelete returnTo="/chat" />
               ) : (
-                <ExpenseCard key={`expense-${item.entry.id}`} expense={item.entry} canDelete />
+                <ExpenseCard key={`expense-${item.entry.id}`} expense={item.entry} canDelete returnTo="/chat" />
               ),
             )}
             {!entries.length ? (
