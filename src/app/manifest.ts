@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AP505",
-    short_name: "AP505",
+    name: "Gastos do casal",
+    short_name: "Casal",
     description: "Gastos do casal, sem drama.",
     start_url: "/dashboard",
     scope: "/",

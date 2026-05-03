@@ -75,7 +75,7 @@ export async function signOutAction() {
 
 export async function createCoupleAction(formData: FormData) {
   const { supabase } = await requireUser();
-  const coupleName = asString(formData.get("couple_name"), "AP505");
+  const coupleName = asString(formData.get("couple_name"), "Meu casal");
   const displayName = asString(formData.get("display_name"), "Eu");
 
   const { error } = await supabase.rpc("create_couple_with_member", {
@@ -99,6 +99,60 @@ export async function joinCoupleAction(formData: FormData) {
 
   if (error) redirect(`/onboarding?error=${encodeURIComponent(error.message)}`);
   redirect("/dashboard");
+}
+
+export async function switchActiveCoupleAction(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const coupleId = asString(formData.get("couple_id"));
+
+  const { data: membership } = await supabase
+    .from("couple_members")
+    .select("id")
+    .eq("couple_id", coupleId)
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!membership) redirect("/settings?error=Você não faz parte desse casal.");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ active_couple_id: coupleId })
+    .eq("id", user.id);
+
+  redirect(error ? `/settings?error=${encodeURIComponent(error.message)}` : "/dashboard");
+}
+
+export async function updateCoupleNameAction(formData: FormData) {
+  const { supabase, couple } = await requireCouple();
+  const name = asString(formData.get("name"));
+
+  const { error } = await supabase
+    .from("couples")
+    .update({ name: name || "Meu casal" })
+    .eq("id", couple.id);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/settings");
+  redirect(error ? `/settings?error=${encodeURIComponent(error.message)}` : "/settings");
+}
+
+export async function updateCurrentMemberAvatarAction(formData: FormData) {
+  const { supabase, currentMember } = await requireCouple();
+  const avatarUrl = asString(formData.get("avatar_url"));
+
+  if (!currentMember) throw new Error("Você ainda não entrou no casal.");
+
+  const { error } = await supabase
+    .from("couple_members")
+    .update({ avatar_url: avatarUrl || null })
+    .eq("id", currentMember.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/chat");
+  revalidatePath("/settings");
 }
 
 export async function createIncomeAction(formData: FormData) {
@@ -140,7 +194,7 @@ async function notifyPartner(coupleId: string, amount: number, category: string)
   const { data } = await supabase.rpc("partner_push_subscriptions", { p_couple_id: coupleId });
 
   await sendPushNotifications(data ?? [], {
-    title: "AP505",
+    title: "Gastos do casal",
     body: `Novo gasto: ${new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",

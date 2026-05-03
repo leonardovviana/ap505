@@ -21,7 +21,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { supabase, couple, members } = await requireCouple();
+  const { supabase, couple, members, currentMember, userCouples } = await requireCouple();
   const { error } = await searchParams;
   const start = monthStart();
   const end = nextMonthStart();
@@ -66,7 +66,13 @@ export default async function DashboardPage({
   const latestIncome = monthIncomes[0];
 
   return (
-    <AppShell coupleId={couple.id} members={members}>
+    <AppShell
+      coupleId={couple.id}
+      coupleName={couple.name}
+      members={members}
+      currentMemberId={currentMember?.id}
+      userCouples={userCouples}
+    >
       <section className="hero-panel rounded-[8px] p-6 md:p-8">
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
           <div className="space-y-5">

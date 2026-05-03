@@ -185,7 +185,7 @@ begin
   on conflict (id) do nothing;
 
   insert into public.couples (name, invite_code, created_by)
-  values (coalesce(nullif(trim(p_couple_name), ''), 'AP505'), public.random_invite_code(), v_user)
+  values (coalesce(nullif(trim(p_couple_name), ''), 'Meu casal'), public.random_invite_code(), v_user)
   returning id into v_couple;
 
   insert into public.couple_members (couple_id, user_id, display_name, role)

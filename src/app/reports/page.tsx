@@ -13,7 +13,7 @@ export const metadata = {
 };
 
 export default async function ReportsPage() {
-  const { supabase, couple, members } = await requireCouple();
+  const { supabase, couple, members, currentMember, userCouples } = await requireCouple();
   const start = monthStart();
   const end = nextMonthStart();
   const { data } = await supabase
@@ -31,7 +31,13 @@ export default async function ReportsPage() {
   const topCategory = dominantCategory(expenses);
 
   return (
-    <AppShell coupleId={couple.id} members={members}>
+    <AppShell
+      coupleId={couple.id}
+      coupleName={couple.name}
+      members={members}
+      currentMemberId={currentMember?.id}
+      userCouples={userCouples}
+    >
       <section className="hero-panel rounded-[8px] p-6 md:p-8">
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
           <div className="space-y-5">

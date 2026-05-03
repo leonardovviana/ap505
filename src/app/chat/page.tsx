@@ -20,7 +20,7 @@ export default async function ChatPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { supabase, couple, members } = await requireCouple();
+  const { supabase, couple, members, currentMember, userCouples } = await requireCouple();
   const { error } = await searchParams;
   const [{ data: expensesData }, { data: incomesData }] = await Promise.all([
     supabase
@@ -47,7 +47,13 @@ export default async function ChatPage({
     .slice(0, 6);
 
   return (
-    <AppShell coupleId={couple.id} members={members}>
+    <AppShell
+      coupleId={couple.id}
+      coupleName={couple.name}
+      members={members}
+      currentMemberId={currentMember?.id}
+      userCouples={userCouples}
+    >
       <section className="hero-panel rounded-[8px] p-6 md:p-8">
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
           <div className="space-y-5">
@@ -60,7 +66,7 @@ export default async function ChatPage({
                 Escreve natural que eu organizo.
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
-                O AP505 entende gastos e entradas, mostra o preview e só salva quando você confirma.
+                O app entende gastos e entradas, mostra o preview e só salva quando você confirma.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

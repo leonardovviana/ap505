@@ -67,7 +67,7 @@ export function PushNotificationButton() {
           <p className="section-title">Notificações</p>
           <h2 className="mt-2 text-base font-black text-[#111827]">Receba aviso quando entrar gasto novo</h2>
           <p className="mt-1 text-sm font-medium leading-6 text-muted">
-            O AP505 manda um toque quando alguém lançar uma despesa.
+            O app manda um toque quando alguém lançar uma despesa.
           </p>
           {status ? <p className="mt-2 text-xs font-black text-ap-purple">{status}</p> : null}
         </div>

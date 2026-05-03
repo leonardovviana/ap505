@@ -54,7 +54,7 @@ export default async function OnboardingPage({
             </h2>
             <div className="mt-5 space-y-3">
               <div className="rounded-[8px] bg-ap-mint px-4 py-3 text-sm font-bold text-[#111827] ring-1 ring-emerald-100">
-                Leonardo cria ou Isabela entra
+                Cria um casal ou entra por convite
               </div>
               <div className="rounded-[8px] bg-ap-lilac px-4 py-3 text-sm font-bold text-[#111827] ring-1 ring-violet-100">
                 gastos e metas em tempo real
@@ -81,7 +81,7 @@ export default async function OnboardingPage({
             </p>
             <div className="mt-5 grid gap-4">
               <Field label="Nome do cantinho">
-                <Input name="couple_name" placeholder="AP505" defaultValue="AP505" required />
+                <Input name="couple_name" placeholder="AP505, Casa 12, Amor & Conta..." required />
               </Field>
               <Field label="Como você quer aparecer?">
                 <Input name="display_name" placeholder="Leonardo" required />

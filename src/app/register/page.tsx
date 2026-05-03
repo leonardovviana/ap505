@@ -20,7 +20,7 @@ export default async function RegisterPage({
   const { error } = await searchParams;
 
   return (
-    <AuthCard title="Criar o AP505">
+    <AuthCard title="Criar conta">
       <form action={signUpAction} className="grid gap-4">
         <Field label="Seu nome">
           <Input name="full_name" autoComplete="name" required placeholder="Leonardo" />

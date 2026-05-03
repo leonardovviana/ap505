@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { CoupleMember } from "@/types/app";
+import type { CoupleMember, UserCouple } from "@/types/app";
 
 export async function getUser() {
   const supabase = await createClient();
@@ -28,7 +28,7 @@ export async function requireCouple() {
 
   if (!profile?.active_couple_id) redirect("/onboarding");
 
-  const [{ data: couple }, { data: members }] = await Promise.all([
+  const [{ data: couple }, { data: members }, { data: allMemberships }] = await Promise.all([
     supabase.from("couples").select("*").eq("id", profile.active_couple_id).single(),
     supabase
       .from("couple_members")
@@ -36,11 +36,21 @@ export async function requireCouple() {
       .eq("couple_id", profile.active_couple_id)
       .eq("is_active", true)
       .order("joined_at", { ascending: true }),
+    supabase
+      .from("couple_members")
+      .select("couple_id, role")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("joined_at", { ascending: false }),
   ]);
 
   if (!couple) redirect("/onboarding");
 
   const currentMember = (members ?? []).find((member) => member.user_id === user.id) ?? null;
+  const coupleIds = (allMemberships ?? []).map((membership) => membership.couple_id);
+  const { data: userCoupleRows } = coupleIds.length
+    ? await supabase.from("couples").select("id, name, invite_code").in("id", coupleIds)
+    : { data: [] };
 
   return {
     supabase,
@@ -49,5 +59,13 @@ export async function requireCouple() {
     couple,
     members: (members ?? []) as CoupleMember[],
     currentMember: currentMember as CoupleMember | null,
+    userCouples: (userCoupleRows ?? [])
+      .map((coupleItem) => {
+        const membership = (allMemberships ?? []).find((item) => item.couple_id === coupleItem.id);
+        return membership
+          ? { id: coupleItem.id, name: coupleItem.name, invite_code: coupleItem.invite_code, role: membership.role }
+          : null;
+      })
+      .filter(Boolean) as UserCouple[],
   };
 }

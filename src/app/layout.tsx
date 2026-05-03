@@ -14,15 +14,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AP505",
-    template: "%s | AP505",
+    default: "Gastos do casal",
+    template: "%s | Gastos do casal",
   },
   description: "Gastos do casal, sem drama.",
-  applicationName: "AP505",
+  applicationName: "Gastos do casal",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "AP505",
+    title: "Gastos do casal",
     statusBarStyle: "default",
   },
   icons: {

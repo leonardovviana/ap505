@@ -66,6 +66,7 @@ export type Database = {
           couple_id: string;
           user_id: string;
           display_name: string;
+          avatar_url: string | null;
           role: "owner" | "member";
           is_active: boolean;
           joined_at: string;
@@ -75,12 +76,14 @@ export type Database = {
           couple_id: string;
           user_id: string;
           display_name: string;
+          avatar_url?: string | null;
           role?: "owner" | "member";
           is_active?: boolean;
           joined_at?: string;
         };
         Update: {
           display_name?: string;
+          avatar_url?: string | null;
           role?: "owner" | "member";
           is_active?: boolean;
         };

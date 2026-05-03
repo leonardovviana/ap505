@@ -17,8 +17,16 @@ export type CoupleMember = {
   user_id: string;
   couple_id: string;
   display_name: string;
+  avatar_url: string | null;
   role: "owner" | "member";
   is_active: boolean;
+};
+
+export type UserCouple = {
+  id: string;
+  name: string;
+  invite_code: string;
+  role: "owner" | "member";
 };
 
 export type ParsedExpense = {
