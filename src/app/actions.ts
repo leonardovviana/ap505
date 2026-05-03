@@ -257,8 +257,6 @@ export async function createFinancialEntryFromParsedAction(parsed: ParsedFinanci
   }
 
   const parsedCategory = cleanCategory(parsed.category);
-  const parsedCategoryError = foodVoucherCategoryError(parsed.payment_method, parsedCategory);
-  if (parsedCategoryError) throw new Error(parsedCategoryError);
 
   const { error } = await supabase.from("expenses").insert({
     couple_id: couple.id,
