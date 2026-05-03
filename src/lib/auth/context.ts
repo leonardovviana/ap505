@@ -47,6 +47,9 @@ export async function requireCouple() {
   if (!couple) redirect("/onboarding");
 
   const currentMember = (members ?? []).find((member) => member.user_id === user.id) ?? null;
+  if (currentMember && profile?.avatar_url && !currentMember.avatar_url) {
+    currentMember.avatar_url = profile.avatar_url;
+  }
   const coupleIds = (allMemberships ?? []).map((membership) => membership.couple_id);
   const { data: userCoupleRows } = coupleIds.length
     ? await supabase.from("couples").select("id, name, invite_code").in("id", coupleIds)

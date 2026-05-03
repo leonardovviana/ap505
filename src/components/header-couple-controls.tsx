@@ -45,8 +45,11 @@ export function HeaderCoupleControls({
     setUploadingMemberId(currentMemberId);
     try {
       const supabase = createClient();
+      const currentMember = members.find((member) => member.id === currentMemberId);
+      if (!currentMember) return;
+
       const cleanName = file.name.replace(/[^\w.-]+/g, "-");
-      const path = `${currentMemberId}/${Date.now()}-${cleanName}`;
+      const path = `${currentMember.user_id}/${Date.now()}-${cleanName}`;
       const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
       if (error) throw error;
 

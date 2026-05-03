@@ -6,7 +6,14 @@ import { ExpenseForm } from "@/components/expense-form";
 import { SummaryCard } from "@/components/summary-card";
 import { Field, Select } from "@/components/ui/field";
 import { requireCouple } from "@/lib/auth/context";
-import { dominantCategory, expensesByMember, sumExpenses } from "@/lib/expenses/summary";
+import {
+  dominantCategory,
+  expensesByMember,
+  sumExpenses,
+  sumFoodVoucherExpenses,
+  sumSpendableExpenses,
+} from "@/lib/expenses/summary";
+import { sumFoodVoucherIncomes, sumSpendableIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthStart, nextMonthStart, monthLabel } from "@/lib/utils";
 import { categories, type Category, type ExpenseRow, type IncomeRow } from "@/types/app";
 
@@ -40,31 +47,29 @@ export default async function ExpensesPage({
   if (selectedMember) expensesQuery = expensesQuery.eq("member_id", selectedMember);
   if (selectedCategory) expensesQuery = expensesQuery.eq("category", selectedCategory);
 
-  const [{ data }, { data: foodVoucherIncomes }, { data: foodVoucherExpenses }] = await Promise.all([
+  const [{ data }, { data: monthIncomes }, { data: allMonthExpenses }] = await Promise.all([
     expensesQuery,
     supabase
       .from("incomes")
-      .select("amount")
+      .select("amount,kind")
       .eq("couple_id", couple.id)
-      .eq("kind", "food_voucher")
       .gte("income_date", start)
       .lt("income_date", end),
     supabase
       .from("expenses")
-      .select("amount")
+      .select("amount,payment_method")
       .eq("couple_id", couple.id)
-      .eq("payment_method", "Vale alimentação")
       .gte("expense_date", start)
       .lt("expense_date", end),
   ]);
 
   const expenses = (data ?? []) as ExpenseRow[];
-  const voucherIncomes = (foodVoucherIncomes ?? []) as Pick<IncomeRow, "amount">[];
-  const voucherExpenses = (foodVoucherExpenses ?? []) as Pick<ExpenseRow, "amount">[];
+  const incomes = (monthIncomes ?? []) as IncomeRow[];
+  const monthExpenseTotals = (allMonthExpenses ?? []) as ExpenseRow[];
   const total = sumExpenses(expenses);
-  const foodVoucherBalance =
-    voucherIncomes.reduce((sum, item) => sum + Number(item.amount), 0) -
-    voucherExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+  const spendableBalance = sumSpendableIncomes(incomes) - sumSpendableExpenses(monthExpenseTotals);
+  const foodVoucherBalance = sumFoodVoucherIncomes(incomes) - sumFoodVoucherExpenses(monthExpenseTotals);
+  const filteredFoodVoucherTotal = sumFoodVoucherExpenses(expenses);
   const byMember = expensesByMember(expenses, members);
   const topCategory = dominantCategory(expenses);
   const latestExpense = expenses[0];
@@ -106,7 +111,11 @@ export default async function ExpensesPage({
               </span>
               <span className="surface-chip">
                 <WalletCards size={14} />
-                Vale {formatCurrency(foodVoucherBalance)}
+                Saldo {formatCurrency(spendableBalance)}
+              </span>
+              <span className="surface-chip">
+                <WalletCards size={14} />
+                Alimentação {formatCurrency(foodVoucherBalance)}
               </span>
             </div>
           </div>
@@ -138,17 +147,17 @@ export default async function ExpensesPage({
               </div>
               <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                  Vale alimentação
+                  Saldo disponível
                 </p>
-                <p className="mt-2 text-xl font-black text-white">{formatCurrency(foodVoucherBalance)}</p>
-                <p className="mt-1 text-sm font-medium text-white/72">saldo separado para alimentação</p>
+                <p className="mt-2 text-xl font-black text-white">{formatCurrency(spendableBalance)}</p>
+                <p className="mt-1 text-sm font-medium text-white/72">salário + extras menos gastos normais</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-4">
+      <div className="mt-5 grid gap-3 md:grid-cols-5">
         <SummaryCard
           label="Total filtrado"
           value={formatCurrency(total)}
@@ -168,6 +177,13 @@ export default async function ExpensesPage({
           hint={topCategory ? "Categoria mais forte da lista" : "Bora lançar o primeiro gasto"}
           tone="purple"
           icon={<CircleDollarSign size={18} />}
+        />
+        <SummaryCard
+          label="Pago no vale"
+          value={formatCurrency(filteredFoodVoucherTotal)}
+          hint="Só quando a lista tem vale alimentação"
+          tone="green"
+          icon={<WalletCards size={18} />}
         />
         <SummaryCard
           label="Saldo do vale"

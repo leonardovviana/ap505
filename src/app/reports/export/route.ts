@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireCouple } from "@/lib/auth/context";
-import { expensesByCategory, expensesByMember, sumExpenses } from "@/lib/expenses/summary";
+import {
+  expensesByCategory,
+  expensesByMember,
+  sumFoodVoucherExpenses,
+  sumSpendableExpenses,
+} from "@/lib/expenses/summary";
+import { sumFoodVoucherIncomes, sumSpendableIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart } from "@/lib/utils";
-import type { ExpenseRow } from "@/types/app";
+import type { ExpenseRow, IncomeRow } from "@/types/app";
 
 function cleanMonth(value: string | null) {
   return /^\d{4}-\d{2}-01$/.test(value ?? "") ? value! : monthStart();
@@ -37,16 +43,30 @@ export async function GET(request: Request) {
   const end = nextMonthStart(new Date(`${start}T12:00:00`));
   const { supabase, couple, members } = await requireCouple();
 
-  const { data } = await supabase
-    .from("expenses")
-    .select("*, couple_members(display_name)")
-    .eq("couple_id", couple.id)
-    .gte("expense_date", start)
-    .lt("expense_date", end)
-    .order("expense_date", { ascending: false });
+  const [{ data }, { data: incomesData }] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select("*, couple_members(display_name)")
+      .eq("couple_id", couple.id)
+      .gte("expense_date", start)
+      .lt("expense_date", end)
+      .order("expense_date", { ascending: false }),
+    supabase
+      .from("incomes")
+      .select("*")
+      .eq("couple_id", couple.id)
+      .gte("income_date", start)
+      .lt("income_date", end),
+  ]);
 
   const expenses = (data ?? []) as ExpenseRow[];
-  const total = sumExpenses(expenses);
+  const incomes = (incomesData ?? []) as IncomeRow[];
+  const total = sumSpendableExpenses(expenses);
+  const totalIncome = sumSpendableIncomes(incomes);
+  const balance = totalIncome - total;
+  const foodVoucherIncome = sumFoodVoucherIncomes(incomes);
+  const foodVoucherExpenses = sumFoodVoucherExpenses(expenses);
+  const foodVoucherBalance = foodVoucherIncome - foodVoucherExpenses;
   const byCategory = expensesByCategory(expenses);
   const byMember = expensesByMember(expenses, members);
 
@@ -97,7 +117,10 @@ export async function GET(request: Request) {
   <Worksheet ss:Name="Resumo">
     <Table>
       <Row><Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(couple.name)} - ${escapeXml(monthLabel(start))}</Data></Cell></Row>
-      <Row><Cell><Data ss:Type="String">Total</Data></Cell><Cell><Data ss:Type="Number">${total}</Data></Cell></Row>
+      <Row><Cell><Data ss:Type="String">Recebido normal</Data></Cell><Cell><Data ss:Type="Number">${totalIncome}</Data></Cell></Row>
+      <Row><Cell><Data ss:Type="String">Gasto normal</Data></Cell><Cell><Data ss:Type="Number">${total}</Data></Cell></Row>
+      <Row><Cell><Data ss:Type="String">Saldo disponível</Data></Cell><Cell><Data ss:Type="Number">${balance}</Data></Cell></Row>
+      <Row><Cell><Data ss:Type="String">Saldo alimentação</Data></Cell><Cell><Data ss:Type="Number">${foodVoucherBalance}</Data></Cell></Row>
       <Row />
       <Row><Cell ss:StyleID="Header"><Data ss:Type="String">Categoria</Data></Cell><Cell ss:StyleID="Header"><Data ss:Type="String">Valor</Data></Cell></Row>
       ${categoryRows}
@@ -166,7 +189,7 @@ export async function GET(request: Request) {
     h1 { margin: 0; font-size: 32px; }
     .muted { color: #6b7280; }
     .hero-muted { color: rgba(255,255,255,.72); margin: 8px 0 0; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0; }
     .card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
     .label { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; font-weight: 900; color: #6b7280; }
     .value { font-size: 22px; font-weight: 900; margin-top: 8px; }
@@ -188,9 +211,10 @@ export async function GET(request: Request) {
     </header>
     <div class="print"><button onclick="window.print()">Salvar como PDF</button></div>
     <section class="grid">
-      <div class="card"><p class="label">Total</p><p class="value">${escapeHtml(formatCurrency(total))}</p></div>
-      <div class="card"><p class="label">Categorias</p><p class="value">${byCategory.length}</p></div>
-      <div class="card"><p class="label">Lançamentos</p><p class="value">${expenses.length}</p></div>
+      <div class="card"><p class="label">Recebido normal</p><p class="value">${escapeHtml(formatCurrency(totalIncome))}</p></div>
+      <div class="card"><p class="label">Gasto normal</p><p class="value">${escapeHtml(formatCurrency(total))}</p></div>
+      <div class="card"><p class="label">Saldo disponível</p><p class="value">${escapeHtml(formatCurrency(balance))}</p></div>
+      <div class="card"><p class="label">Saldo alimentação</p><p class="value">${escapeHtml(formatCurrency(foodVoucherBalance))}</p></div>
     </section>
     <section class="section">
       <h2>Onde a grana foi</h2>

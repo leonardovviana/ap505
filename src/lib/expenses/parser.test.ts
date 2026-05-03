@@ -52,6 +52,20 @@ describe("interpretExpenseMessage", () => {
     expect(result.expense_date).not.toBe(new Date().toISOString().slice(0, 10));
   });
 
+  it("uses food voucher only when explicitly mentioned", () => {
+    const result = interpretExpenseMessage("gastei 80 no mercado no vale alimentação", maria, members);
+
+    expect(result.category).toBe("Alimentação");
+    expect(result.payment_method).toBe("Vale alimentação");
+  });
+
+  it("keeps regular food expenses out of the food voucher wallet", () => {
+    const result = interpretExpenseMessage("gastei 80 no mercado", maria, members);
+
+    expect(result.category).toBe("Alimentação");
+    expect(result.payment_method).toBeNull();
+  });
+
   it("falls back to Outros for unknown categories", () => {
     const result = interpretExpenseMessage("gastei 42 em sei lá", maria, members);
 
@@ -67,6 +81,15 @@ describe("interpretExpenseMessage", () => {
     if (result.type === "income") {
       expect(result.kind).toBe("salary");
       expect(result.description).toBe("Salario");
+    }
+  });
+
+  it("interprets food voucher credit as a separate income kind", () => {
+    const result = interpretFinancialEntryMessage("recebi 600 de ticket alimentação", maria, members);
+
+    expect(result.type).toBe("income");
+    if (result.type === "income") {
+      expect(result.kind).toBe("food_voucher");
     }
   });
 });

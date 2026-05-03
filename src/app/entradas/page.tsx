@@ -8,8 +8,14 @@ import { SummaryCard } from "@/components/summary-card";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { requireCouple } from "@/lib/auth/context";
-import { sumExpenses } from "@/lib/expenses/summary";
-import { dominantIncomeKind, incomesByKind, incomesByMember, sumIncomes } from "@/lib/incomes/summary";
+import { sumFoodVoucherExpenses, sumSpendableExpenses } from "@/lib/expenses/summary";
+import {
+  dominantIncomeKind,
+  incomesByKind,
+  incomesByMember,
+  sumFoodVoucherIncomes,
+  sumSpendableIncomes,
+} from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart, toISODate } from "@/lib/utils";
 import type { ExpenseRow, IncomeRow } from "@/types/app";
 import { incomeKindLabels, incomeKinds } from "@/types/app";
@@ -43,7 +49,7 @@ export default async function IncomesPage({
       .limit(80),
     supabase
       .from("expenses")
-      .select("amount")
+      .select("amount,payment_method")
       .eq("couple_id", couple.id)
       .gte("expense_date", start)
       .lt("expense_date", end),
@@ -51,9 +57,12 @@ export default async function IncomesPage({
 
   const incomes = (incomesData ?? []) as IncomeRow[];
   const expenses = (expensesData ?? []) as ExpenseRow[];
-  const totalIncome = sumIncomes(incomes);
-  const totalExpenses = sumExpenses(expenses);
+  const totalIncome = sumSpendableIncomes(incomes);
+  const totalExpenses = sumSpendableExpenses(expenses);
+  const foodVoucherIncome = sumFoodVoucherIncomes(incomes);
+  const foodVoucherExpenses = sumFoodVoucherExpenses(expenses);
   const balance = totalIncome - totalExpenses;
+  const foodVoucherBalance = foodVoucherIncome - foodVoucherExpenses;
   const byMember = incomesByMember(incomes, members);
   const byKind = incomesByKind(incomes);
   const topKind = dominantIncomeKind(incomes);
@@ -76,22 +85,22 @@ export default async function IncomesPage({
             </span>
             <div className="max-w-2xl space-y-3">
               <h1 className="text-4xl font-black tracking-normal text-white md:text-5xl">
-                Vocês receberam {formatCurrency(totalIncome)} esse mês
+                Saldo disponível {formatCurrency(balance)}
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
                 {balance >= 0
-                  ? `Sobrou ${formatCurrency(balance)} depois das saídas.`
-                  : `Faltam ${formatCurrency(Math.abs(balance))} para fechar o mês.`}
+                  ? `Entraram ${formatCurrency(totalIncome)} em salário/extras. Vale alimentação fica em outro saldo.`
+                  : `Faltam ${formatCurrency(Math.abs(balance))} para cobrir as saídas fora do vale.`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="surface-chip">
                 <Banknote size={14} />
-                {formatCurrency(totalIncome)} em entradas
+                {formatCurrency(totalIncome)} salário + extras
               </span>
               <span className="surface-chip">
                 <WalletCards size={14} />
-                Saídas {formatCurrency(totalExpenses)}
+                Saídas normais {formatCurrency(totalExpenses)}
               </span>
               <span className="surface-chip">
                 <UsersRound size={14} />
@@ -103,11 +112,21 @@ export default async function IncomesPage({
           <div className="grid gap-3">
             <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                Saldo do mês
+                Saldo disponível
               </p>
               <p className="mt-2 text-3xl font-black text-white">{formatCurrency(balance)}</p>
               <p className="mt-1 text-sm font-medium text-white/72">
-                Entradas {formatCurrency(totalIncome)} · saídas {formatCurrency(totalExpenses)}
+                Entradas normais {formatCurrency(totalIncome)} · saídas normais {formatCurrency(totalExpenses)}
+              </p>
+            </div>
+
+            <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
+                Saldo alimentação
+              </p>
+              <p className="mt-2 text-2xl font-black text-white">{formatCurrency(foodVoucherBalance)}</p>
+              <p className="mt-1 text-sm font-medium text-white/72">
+                Vale recebido {formatCurrency(foodVoucherIncome)} · usado {formatCurrency(foodVoucherExpenses)}
               </p>
             </div>
 
@@ -137,27 +156,34 @@ export default async function IncomesPage({
         </div>
       </section>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-5 grid gap-3 md:grid-cols-4">
         <SummaryCard
-          label="Total de entradas"
+          label="Salário + extras"
           value={formatCurrency(totalIncome)}
-          hint="Tudo que entrou no mês atual"
+          hint="Não inclui vale alimentação"
           tone="green"
           icon={<Banknote size={18} />}
         />
         <SummaryCard
-          label="Total de saídas"
+          label="Saídas normais"
           value={formatCurrency(totalExpenses)}
-          hint="Tudo que saiu no mês atual"
+          hint="Sem gastos pagos no vale"
           tone="purple"
           icon={<WalletCards size={18} />}
         />
         <SummaryCard
-          label="Saldo do mês"
+          label="Saldo disponível"
           value={formatCurrency(balance)}
           hint={balance >= 0 ? "Fechou no positivo" : "Ainda falta cobrir as saídas"}
           tone={balance >= 0 ? "green" : "purple"}
           icon={<UsersRound size={18} />}
+        />
+        <SummaryCard
+          label="Saldo alimentação"
+          value={formatCurrency(foodVoucherBalance)}
+          hint="Vale/ticket menos uso em alimentação"
+          tone={foodVoucherBalance >= 0 ? "green" : "purple"}
+          icon={<WalletCards size={18} />}
         />
       </div>
 
@@ -167,7 +193,7 @@ export default async function IncomesPage({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="section-title">Nova entrada</p>
-              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Salário ou extra, sem drama</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Salário, extra ou vale</h2>
               <p className="mt-2 text-sm font-medium leading-6 text-muted">
                 Registre o que entrou e acompanhe o saldo junto com os gastos.
               </p>

@@ -81,7 +81,7 @@ export default async function OnboardingPage({
             </p>
             <div className="mt-5 grid gap-4">
               <Field label="Nome do cantinho">
-                <Input name="couple_name" placeholder="AP505, Casa 12, Amor & Conta..." required />
+                <Input name="couple_name" placeholder="Junto$" required />
               </Field>
               <Field label="Como você quer aparecer?">
                 <Input name="display_name" placeholder="Leonardo" required />

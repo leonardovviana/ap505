@@ -5,9 +5,16 @@ import { EmptyState } from "@/components/empty-state";
 import { SpendingChart } from "@/components/spending-chart";
 import { SummaryCard } from "@/components/summary-card";
 import { requireCouple } from "@/lib/auth/context";
-import { dominantCategory, expensesByCategory, expensesByMember, sumExpenses } from "@/lib/expenses/summary";
+import {
+  dominantCategory,
+  expensesByCategory,
+  expensesByMember,
+  sumFoodVoucherExpenses,
+  sumSpendableExpenses,
+} from "@/lib/expenses/summary";
+import { sumFoodVoucherIncomes, sumSpendableIncomes } from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart } from "@/lib/utils";
-import type { ExpenseRow } from "@/types/app";
+import type { ExpenseRow, IncomeRow } from "@/types/app";
 
 export const metadata = {
   title: "Relatórios",
@@ -38,16 +45,30 @@ export default async function ReportsPage({
   const end = nextMonthStart(new Date(`${start}T12:00:00`));
   const exportParams = new URLSearchParams({ month: start });
 
-  const { data } = await supabase
-    .from("expenses")
-    .select("*, couple_members(display_name)")
-    .eq("couple_id", couple.id)
-    .gte("expense_date", start)
-    .lt("expense_date", end)
-    .order("expense_date", { ascending: false });
+  const [{ data }, { data: incomesData }] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select("*, couple_members(display_name)")
+      .eq("couple_id", couple.id)
+      .gte("expense_date", start)
+      .lt("expense_date", end)
+      .order("expense_date", { ascending: false }),
+    supabase
+      .from("incomes")
+      .select("*")
+      .eq("couple_id", couple.id)
+      .gte("income_date", start)
+      .lt("income_date", end),
+  ]);
 
   const expenses = (data ?? []) as ExpenseRow[];
-  const total = sumExpenses(expenses);
+  const incomes = (incomesData ?? []) as IncomeRow[];
+  const total = sumSpendableExpenses(expenses);
+  const totalIncome = sumSpendableIncomes(incomes);
+  const foodVoucherIncome = sumFoodVoucherIncomes(incomes);
+  const foodVoucherExpenses = sumFoodVoucherExpenses(expenses);
+  const balance = totalIncome - total;
+  const foodVoucherBalance = foodVoucherIncome - foodVoucherExpenses;
   const byCategory = expensesByCategory(expenses);
   const byMember = expensesByMember(expenses, members);
   const topCategory = dominantCategory(expenses);
@@ -72,12 +93,12 @@ export default async function ReportsPage({
             </span>
             <div className="max-w-2xl space-y-3">
               <h1 className="text-4xl font-black tracking-normal text-white md:text-5xl">
-                Fechamento de {monthLabel(start)}.
+                Recebido {formatCurrency(totalIncome)} · gasto {formatCurrency(total)}
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
-                {topCategory
-                  ? `${topCategory} liderou o mês. Clique em uma categoria para abrir todos os lançamentos dela.`
-                  : "Esse mês ainda está zerado. Quando lançar gastos, o relatório aparece aqui."}
+                {balance >= 0
+                  ? `Saldo disponível ${formatCurrency(balance)} em ${monthLabel(start)}.`
+                  : `Faltaram ${formatCurrency(Math.abs(balance))} fora do vale em ${monthLabel(start)}.`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -91,7 +112,11 @@ export default async function ReportsPage({
               </span>
               <span className="surface-chip">
                 <WalletCards size={14} />
-                {formatCurrency(total)}
+                Saldo {formatCurrency(balance)}
+              </span>
+              <span className="surface-chip">
+                <WalletCards size={14} />
+                Alimentação {formatCurrency(foodVoucherBalance)}
               </span>
             </div>
           </div>
@@ -99,21 +124,21 @@ export default async function ReportsPage({
           <div className="grid gap-3">
             <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                Navegar meses
+                Resumo do mês
               </p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <Link href={`/reports?month=${previousMonth}`} className="rounded-[8px] bg-white/10 px-3 py-2 text-center text-sm font-black text-white transition hover:bg-white/20">
-                  Anterior
-                </Link>
-                <Link href={`/reports?month=${currentMonth}`} className="rounded-[8px] bg-white px-3 py-2 text-center text-sm font-black text-[#111827]">
-                  Atual
-                </Link>
-                <Link href={`/reports?month=${nextMonth}`} className="rounded-[8px] bg-white/10 px-3 py-2 text-center text-sm font-black text-white transition hover:bg-white/20">
-                  Próximo
-                </Link>
-              </div>
-              <p className="mt-3 text-sm font-medium text-white/72">
-                A virada do mês já começa zerada; meses anteriores ficam guardados aqui.
+              <p className="mt-2 text-3xl font-black text-white">{formatCurrency(balance)}</p>
+              <p className="mt-1 text-sm font-medium text-white/72">
+                Entradas normais {formatCurrency(totalIncome)} · saídas normais {formatCurrency(total)}
+              </p>
+            </div>
+
+            <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
+                Saldo alimentação
+              </p>
+              <p className="mt-2 text-2xl font-black text-white">{formatCurrency(foodVoucherBalance)}</p>
+              <p className="mt-1 text-sm font-medium text-white/72">
+                Vale recebido {formatCurrency(foodVoucherIncome)} · usado {formatCurrency(foodVoucherExpenses)}
               </p>
             </div>
 
@@ -136,18 +161,59 @@ export default async function ReportsPage({
                 <p className="mt-1 text-xs font-medium text-white/72">planilha organizada</p>
               </a>
             </div>
+
+            <div className="rounded-[8px] bg-white/10 p-3 backdrop-blur">
+              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
+                Mês
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <Link href={`/reports?month=${previousMonth}`} className="rounded-[8px] bg-white/10 px-3 py-2 text-center text-xs font-black text-white transition hover:bg-white/20">
+                  Anterior
+                </Link>
+                <Link href={`/reports?month=${currentMonth}`} className="rounded-[8px] bg-white px-3 py-2 text-center text-xs font-black text-[#111827]">
+                  Atual
+                </Link>
+                <Link href={`/reports?month=${nextMonth}`} className="rounded-[8px] bg-white/10 px-3 py-2 text-center text-xs font-black text-white transition hover:bg-white/20">
+                  Próximo
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-5 grid gap-3 md:grid-cols-4">
         <SummaryCard
-          label="Total do mês"
-          value={formatCurrency(total)}
+          label="Recebido normal"
+          value={formatCurrency(totalIncome)}
           hint={monthLabel(start)}
           tone="green"
           icon={<WalletCards size={18} />}
         />
+        <SummaryCard
+          label="Gasto normal"
+          value={formatCurrency(total)}
+          hint={topCategory ? `Maior categoria: ${topCategory}` : "Sem gastos"}
+          tone="purple"
+          icon={<BadgeDollarSign size={18} />}
+        />
+        <SummaryCard
+          label="Saldo disponível"
+          value={formatCurrency(balance)}
+          hint={balance >= 0 ? "Fechou positivo" : "Fechou negativo"}
+          tone={balance >= 0 ? "green" : "purple"}
+          icon={<WalletCards size={18} />}
+        />
+        <SummaryCard
+          label="Saldo alimentação"
+          value={formatCurrency(foodVoucherBalance)}
+          hint="Vale/ticket separado do saldo normal"
+          tone={foodVoucherBalance >= 0 ? "green" : "purple"}
+          icon={<WalletCards size={18} />}
+        />
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
         {byMember.map((item, index) => (
           <SummaryCard
             key={item.name}

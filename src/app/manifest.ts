@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Gastos do casal",
-    short_name: "Casal",
-    description: "Gastos do casal, sem drama.",
+    name: "Junto$",
+    short_name: "Junto$",
+    description: "Junto$, finanças em dupla sem drama.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",
@@ -13,10 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     icons: [
       {
-        src: "/icons/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "maskable",
+        src: "/icons/logo.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
       },
     ],
   };

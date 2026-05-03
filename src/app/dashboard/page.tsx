@@ -6,8 +6,20 @@ import { ExpenseCard } from "@/components/expense-card";
 import { SpendingChart } from "@/components/spending-chart";
 import { SummaryCard } from "@/components/summary-card";
 import { requireCouple } from "@/lib/auth/context";
-import { dominantCategory, expensesByCategory, expensesByMember, monthlyBudget, sumExpenses } from "@/lib/expenses/summary";
-import { dominantIncomeKind, incomesByKind, incomesByMember, sumIncomes } from "@/lib/incomes/summary";
+import {
+  dominantCategory,
+  expensesByCategory,
+  expensesByMember,
+  monthlyBudget,
+  sumFoodVoucherExpenses,
+  sumSpendableExpenses,
+} from "@/lib/expenses/summary";
+import {
+  dominantIncomeKind,
+  incomesByMember,
+  sumFoodVoucherIncomes,
+  sumSpendableIncomes,
+} from "@/lib/incomes/summary";
 import { formatCurrency, monthLabel, monthStart, nextMonthStart } from "@/lib/utils";
 import { incomeKindLabels } from "@/types/app";
 import type { BudgetRow, ExpenseRow, IncomeRow } from "@/types/app";
@@ -51,13 +63,15 @@ export default async function DashboardPage({
   const monthIncomes = (incomes ?? []) as IncomeRow[];
   const monthBudgets = (budgets ?? []) as BudgetRow[];
 
-  const totalExpenses = sumExpenses(monthExpenses);
-  const totalIncome = sumIncomes(monthIncomes);
+  const totalExpenses = sumSpendableExpenses(monthExpenses);
+  const totalIncome = sumSpendableIncomes(monthIncomes);
+  const foodVoucherIncome = sumFoodVoucherIncomes(monthIncomes);
+  const foodVoucherExpenses = sumFoodVoucherExpenses(monthExpenses);
   const balance = totalIncome - totalExpenses;
+  const foodVoucherBalance = foodVoucherIncome - foodVoucherExpenses;
   const byCategory = expensesByCategory(monthExpenses);
   const byExpenseMember = expensesByMember(monthExpenses, members);
   const byIncomeMember = incomesByMember(monthIncomes, members);
-  const byIncomeKind = incomesByKind(monthIncomes);
   const topCategory = dominantCategory(monthExpenses);
   const topIncomeKind = dominantIncomeKind(monthIncomes);
   const budget = monthlyBudget(monthBudgets);
@@ -82,22 +96,22 @@ export default async function DashboardPage({
             </span>
             <div className="max-w-2xl space-y-3">
               <h1 className="text-4xl font-black tracking-normal text-white md:text-5xl">
-                Vocês receberam {formatCurrency(totalIncome)} e gastaram {formatCurrency(totalExpenses)} esse mês
+                Saldo disponível {formatCurrency(balance)} e alimentação {formatCurrency(foodVoucherBalance)}
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
                 {balance >= 0
-                  ? `Sobrou ${formatCurrency(balance)} depois das saídas.`
-                  : `Faltam ${formatCurrency(Math.abs(balance))} para fechar o mês.`}
+                  ? `Receberam ${formatCurrency(totalIncome)} em salário/extras e gastaram ${formatCurrency(totalExpenses)} fora do vale.`
+                  : `Faltam ${formatCurrency(Math.abs(balance))} para cobrir os gastos fora do vale.`}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="surface-chip">
                 <Banknote size={14} />
-                {formatCurrency(totalIncome)} em entradas
+                {formatCurrency(totalIncome)} salário + extras
               </span>
               <span className="surface-chip">
                 <CircleDollarSign size={14} />
-                {formatCurrency(totalExpenses)} em saídas
+                {formatCurrency(totalExpenses)} saídas normais
               </span>
               <span className="surface-chip">
                 <BadgeDollarSign size={14} />
@@ -105,21 +119,30 @@ export default async function DashboardPage({
               </span>
               <span className="surface-chip">
                 <WalletCards size={14} />
-                {byIncomeKind.map((item) => `${item.label}: ${formatCurrency(item.value)}`).join(" · ") ||
-                  "Sem entradas"}
+                Vale {formatCurrency(foodVoucherBalance)}
               </span>
             </div>
           </div>
 
           <div className="grid gap-3">
             <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">Saldo do mês</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">Saldo disponível</p>
               <p className="mt-2 text-3xl font-black text-white">{formatCurrency(balance)}</p>
               <p className="mt-1 text-sm font-medium text-white/72">
                 {latestIncome ? `Última entrada: ${latestIncome.description}` : "Lança a primeira entrada e tudo começa a aparecer"}
               </p>
               <p className="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-white/60">
                 {topIncomeKind ? `Tipo dominante: ${incomeKindLabels[topIncomeKind]}` : "Sem entradas registradas"}
+              </p>
+            </div>
+
+            <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
+                Saldo alimentação
+              </p>
+              <p className="mt-2 text-2xl font-black text-white">{formatCurrency(foodVoucherBalance)}</p>
+              <p className="mt-1 text-sm font-medium text-white/72">
+                Vale recebido {formatCurrency(foodVoucherIncome)} · usado {formatCurrency(foodVoucherExpenses)}
               </p>
             </div>
 
@@ -149,26 +172,33 @@ export default async function DashboardPage({
 
       {error ? <p className="mt-4 rounded-[8px] bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-5 grid gap-3 md:grid-cols-4">
         <SummaryCard
-          label="Entradas do mês"
+          label="Salário + extras"
           value={formatCurrency(totalIncome)}
-          hint="Tudo que entrou na conta do casal"
+          hint="Saldo disponível não inclui vale"
           tone="green"
           icon={<Banknote size={18} />}
         />
         <SummaryCard
-          label="Saídas do mês"
+          label="Saídas normais"
           value={formatCurrency(totalExpenses)}
-          hint="Tudo que saiu da conta do casal"
+          hint="Sem gastos pagos no vale"
           tone="purple"
           icon={<CircleDollarSign size={18} />}
         />
         <SummaryCard
-          label="Saldo do mês"
+          label="Saldo disponível"
           value={formatCurrency(balance)}
           hint={balance >= 0 ? "Fechou no positivo" : "Ainda falta cobrir as saídas"}
           tone={balance >= 0 ? "green" : "purple"}
+          icon={<WalletCards size={18} />}
+        />
+        <SummaryCard
+          label="Saldo alimentação"
+          value={formatCurrency(foodVoucherBalance)}
+          hint="Vale recebido menos uso em alimentação"
+          tone={foodVoucherBalance >= 0 ? "green" : "purple"}
           icon={<WalletCards size={18} />}
         />
       </div>

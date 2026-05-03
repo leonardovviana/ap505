@@ -81,7 +81,7 @@ export async function signOutAction() {
 
 export async function createCoupleAction(formData: FormData) {
   const { supabase } = await requireUser();
-  const coupleName = asString(formData.get("couple_name"), "Meu casal");
+  const coupleName = asString(formData.get("couple_name"), "Junto$");
   const displayName = asString(formData.get("display_name"), "Eu");
 
   const { error } = await supabase.rpc("create_couple_with_member", {
@@ -135,7 +135,7 @@ export async function updateCoupleNameAction(formData: FormData) {
 
   const { error } = await supabase
     .from("couples")
-    .update({ name: name || "Meu casal" })
+    .update({ name: name || "Junto$" })
     .eq("id", couple.id);
 
   revalidatePath("/dashboard");
@@ -144,16 +144,17 @@ export async function updateCoupleNameAction(formData: FormData) {
 }
 
 export async function updateCurrentMemberAvatarAction(formData: FormData) {
-  const { supabase, currentMember } = await requireCouple();
+  const { supabase, currentMember, user } = await requireCouple();
   const avatarUrl = asString(formData.get("avatar_url"));
 
   if (!currentMember) throw new Error("Você ainda não entrou no casal.");
 
-  const { error } = await supabase
-    .from("couple_members")
-    .update({ avatar_url: avatarUrl || null })
-    .eq("id", currentMember.id);
+  const [{ error: memberError }, { error: profileError }] = await Promise.all([
+    supabase.from("couple_members").update({ avatar_url: avatarUrl || null }).eq("id", currentMember.id),
+    supabase.from("profiles").update({ avatar_url: avatarUrl || null }).eq("id", user.id),
+  ]);
 
+  const error = memberError ?? profileError;
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard");
@@ -200,7 +201,7 @@ async function notifyPartner(coupleId: string, amount: number, category: string)
   const { data } = await supabase.rpc("partner_push_subscriptions", { p_couple_id: coupleId });
 
   await sendPushNotifications(data ?? [], {
-    title: "Gastos do casal",
+    title: "Junto$",
     body: `Novo gasto: ${new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",

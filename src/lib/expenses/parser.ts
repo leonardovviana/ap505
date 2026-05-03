@@ -87,6 +87,8 @@ function inferPayment(message: string) {
   if (
     normalized.includes("vale alimentação") ||
     normalized.includes("vale alimentacao") ||
+    normalized.includes("ticket alimentação") ||
+    normalized.includes("ticket alimentacao") ||
     /\bva\b/.test(normalized)
   ) {
     return "Vale alimentação";
@@ -146,6 +148,8 @@ function inferIncomeKind(message: string): IncomeKind {
   if (
     normalized.includes("vale alimentação") ||
     normalized.includes("vale alimentacao") ||
+    normalized.includes("ticket alimentação") ||
+    normalized.includes("ticket alimentacao") ||
     /\bva\b/.test(normalized)
   ) {
     return "food_voucher";

@@ -14,20 +14,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Gastos do casal",
-    template: "%s | Gastos do casal",
+    default: "Junto$",
+    template: "%s | Junto$",
   },
-  description: "Gastos do casal, sem drama.",
-  applicationName: "Gastos do casal",
+  description: "Junto$, finanças em dupla sem drama.",
+  applicationName: "Junto$",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Gastos do casal",
+    title: "Junto$",
     statusBarStyle: "default",
   },
   icons: {
-    icon: "/icons/icon.svg",
-    apple: "/icons/icon.svg",
+    icon: "/icons/logo.png",
+    apple: "/icons/logo.png",
   },
 };
 

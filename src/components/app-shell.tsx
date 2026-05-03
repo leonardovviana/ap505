@@ -20,7 +20,7 @@ const desktopLinks = [
 export function AppShell({
   children,
   coupleId,
-  coupleName = "Meu casal",
+  coupleName = "Junto$",
   members,
   currentMemberId,
   userCouples = [],
@@ -37,7 +37,12 @@ export function AppShell({
       <RealtimeRefresh coupleId={coupleId} />
       <header className="sticky top-0 z-30 border-b border-white/70 bg-[#f7f8fa]/80 px-4 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-[8px]">
-          <AppLogo name={coupleName} />
+          <div className="flex min-w-0 items-center gap-3">
+            <AppLogo />
+            <span className="hidden max-w-[180px] truncate rounded-full bg-ap-mint px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-ap-green ring-1 ring-emerald-100 md:inline-flex">
+              {coupleName}
+            </span>
+          </div>
           <nav className="hidden items-center gap-1 md:flex">
             {desktopLinks.map(([label, href]) => (
               <Link
