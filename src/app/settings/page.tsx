@@ -70,7 +70,7 @@ export default async function SettingsPage({
                 Manda esse código para a outra pessoa entrar em {couple.name}.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {members.map((member) => (
                 <div key={member.id} className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
@@ -102,7 +102,7 @@ export default async function SettingsPage({
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
         <form action={updateCoupleNameAction} className="soft-card overflow-hidden rounded-[8px] p-5">
           <div className="mb-4 h-1 w-16 rounded-full bg-[linear-gradient(90deg,#1DB954,#820AD1)]" />
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Nome do app</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Esse cantinho é de vocês</h2>
@@ -127,7 +127,7 @@ export default async function SettingsPage({
 
         <section className="soft-card overflow-hidden rounded-[8px] p-5">
           <div className="mb-4 h-1 w-16 rounded-full bg-[linear-gradient(90deg,#820AD1,#1DB954)]" />
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Convite</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Compartilha sem enrolação</h2>
@@ -172,8 +172,8 @@ export default async function SettingsPage({
           </p>
           <div className="mt-5 grid gap-2 md:grid-cols-2">
             {userCouples.map((item) => (
-              <div key={item.id} className="flex items-center justify-between rounded-[8px] bg-white px-4 py-3 text-sm font-bold text-[#111827] ring-1 ring-black/5">
-                <span>{item.name}</span>
+              <div key={item.id} className="flex flex-col gap-1 rounded-[8px] bg-white px-4 py-3 text-sm font-bold text-[#111827] ring-1 ring-black/5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <span className="min-w-0 break-words">{item.name}</span>
                 <span className="text-xs uppercase tracking-[0.14em] text-muted">{item.role === "owner" ? "Criador" : "Membro"}</span>
               </div>
             ))}

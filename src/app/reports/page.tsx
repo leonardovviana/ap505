@@ -142,7 +142,7 @@ export default async function ReportsPage({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <a
                 href={`/reports/export?${exportParams.toString()}&format=pdf`}
                 target="_blank"
@@ -166,7 +166,7 @@ export default async function ReportsPage({
               <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
                 Mês
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Link href={`/reports?month=${previousMonth}`} className="rounded-[8px] bg-white/10 px-3 py-2 text-center text-xs font-black text-white transition hover:bg-white/20">
                   Anterior
                 </Link>
@@ -229,7 +229,7 @@ export default async function ReportsPage({
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="soft-card overflow-hidden rounded-[8px] p-5">
           <div className="mb-4 h-1 w-16 rounded-full bg-[linear-gradient(90deg,#1DB954,#820AD1)]" />
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Por categoria</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Mapa visual do mês</h2>
@@ -245,7 +245,7 @@ export default async function ReportsPage({
 
         <section className="soft-card overflow-hidden rounded-[8px] p-5">
           <div className="mb-4 h-1 w-16 rounded-full bg-[linear-gradient(90deg,#820AD1,#1DB954)]" />
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Detalhes</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Onde a grana foi</h2>
@@ -257,16 +257,16 @@ export default async function ReportsPage({
               <Link
                 key={item.name}
                 href={expenseCategoryHref(item.name, start)}
-                className="group flex items-center justify-between rounded-[8px] bg-white/80 px-4 py-3 ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:bg-ap-mint/70 hover:ring-emerald-200"
+                className="group flex items-start justify-between gap-3 rounded-[8px] bg-white/80 px-4 py-3 ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:bg-ap-mint/70 hover:ring-emerald-200"
               >
-                <span>
+                <span className="min-w-0 flex-1">
                   <span className="block text-sm font-black text-[#111827]">{item.name}</span>
                   <span className="mt-1 flex items-center gap-1 text-xs font-bold text-muted">
                     <ArrowDownToLine size={13} />
                     Ver gastos dessa categoria
                   </span>
                 </span>
-                <span className="text-sm font-black text-[#111827]">{formatCurrency(item.value)}</span>
+                <span className="shrink-0 whitespace-nowrap text-sm font-black text-[#111827]">{formatCurrency(item.value)}</span>
               </Link>
             ))}
             {!byCategory.length ? (

@@ -135,7 +135,7 @@ export default async function ExpensesPage({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
                   Quem mais lançou?
@@ -197,7 +197,7 @@ export default async function ExpensesPage({
       <div className="mt-5 grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
         <section className="soft-card overflow-hidden rounded-[8px] p-5">
           <div className="mb-5 h-1 w-16 rounded-full bg-[linear-gradient(90deg,#1DB954,#820AD1)]" />
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Novo gasto</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Lança sem drama</h2>
@@ -215,7 +215,7 @@ export default async function ExpensesPage({
 
         <section className="soft-card overflow-hidden rounded-[8px] p-5">
           <div className="mb-5 h-1 w-16 rounded-full bg-[linear-gradient(90deg,#820AD1,#1DB954)]" />
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-title">Últimos gastos</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">O que acabou de entrar</h2>

@@ -123,7 +123,7 @@ export function ChatExpenseInput() {
             </div>
           ) : null}
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button type="button" variant="secondary" onClick={() => setPayload(null)}>
               <X size={16} /> Ajustar
             </Button>

@@ -43,18 +43,20 @@ export function IncomeCard({
       <div className="flex">
         <div className="w-1 bg-[linear-gradient(180deg,#1DB954,#820AD1)]" />
         <div className="flex-1 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-black text-[#111827]">{income.description}</h3>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-2 break-words text-base font-black leading-tight text-[#111827]">{income.description}</h3>
               <p className="mt-1 text-xs font-semibold text-muted">
                 {income.couple_members?.display_name ?? "Alguém"} ·{" "}
                 {new Date(`${income.income_date}T12:00:00`).toLocaleDateString("pt-BR")}
               </p>
             </div>
-            <p className="shrink-0 text-base font-black text-[#111827]">{formatCurrency(income.amount)}</p>
+            <p className="shrink-0 self-start text-base font-black whitespace-nowrap text-[#111827]">
+              {formatCurrency(income.amount)}
+            </p>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-ap-mint px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-ap-green">
                 {incomeKindLabels[income.kind]}
@@ -68,7 +70,7 @@ export function IncomeCard({
               <Button
                 type="button"
                 variant="danger"
-                className="h-9 px-3 text-xs shadow-none hover:bg-rose-600 hover:text-white hover:ring-rose-600"
+                className="h-9 w-full px-3 text-xs shadow-none hover:bg-rose-600 hover:text-white hover:ring-rose-600 sm:w-auto"
                 aria-label="Apagar entrada"
                 disabled={isPending}
                 onClick={deleteIncome}
