@@ -22,6 +22,7 @@ export type CoupleMember = {
 };
 
 export type ParsedExpense = {
+  type: "expense";
   amount: number;
   description: string;
   category: Category;
@@ -30,6 +31,18 @@ export type ParsedExpense = {
   member_name: string;
   confidence: number;
 };
+
+export type ParsedIncome = {
+  type: "income";
+  amount: number;
+  description: string;
+  kind: IncomeKind;
+  income_date: string;
+  member_name: string;
+  confidence: number;
+};
+
+export type ParsedFinancialEntry = ParsedExpense | ParsedIncome;
 
 export type IncomeRow = {
   id: string;

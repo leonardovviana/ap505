@@ -2,17 +2,25 @@
 
 import { useState, useTransition } from "react";
 import { Check, Loader2, SendHorizonal, Sparkles, X } from "lucide-react";
-import { createExpenseFromParsedAction } from "@/app/actions";
+import { createFinancialEntryFromParsedAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/field";
 import { formatCurrency } from "@/lib/utils";
-import type { ParsedExpense } from "@/types/app";
+import { incomeKindLabels, type ParsedFinancialEntry } from "@/types/app";
 
 type ParsePayload = {
-  result: ParsedExpense;
+  result: ParsedFinancialEntry;
   source: "ai" | "fallback";
   preview: string;
 };
+
+function entryDetails(entry: ParsedFinancialEntry) {
+  if (entry.type === "income") {
+    return `${entry.description} · ${formatCurrency(entry.amount)} · ${entry.member_name} · ${incomeKindLabels[entry.kind]}`;
+  }
+
+  return `${entry.description} · ${formatCurrency(entry.amount)} · ${entry.member_name} · ${entry.category}`;
+}
 
 export function ChatExpenseInput() {
   const [message, setMessage] = useState("");
@@ -38,10 +46,10 @@ export function ChatExpenseInput() {
     });
   }
 
-  function confirmExpense() {
+  function confirmEntry() {
     if (!payload) return;
     startSaving(async () => {
-      await createExpenseFromParsedAction(payload.result);
+      await createFinancialEntryFromParsedAction(payload.result);
       setPayload(null);
       setMessage("");
     });
@@ -56,14 +64,14 @@ export function ChatExpenseInput() {
         </span>
         <div>
           <h2 className="text-base font-black text-[#111827]">Bora lançar?</h2>
-          <p className="text-xs font-semibold text-muted">Escreve do seu jeito: “5,00 coxinha”.</p>
+          <p className="text-xs font-semibold text-muted">Gasto ou entrada: escreve do seu jeito.</p>
         </div>
       </div>
 
       <Textarea
         value={message}
         onChange={(event) => setMessage(event.target.value)}
-        placeholder="gastei 42 no mercado"
+        placeholder="gastei 42 no mercado ou recebi 3500 salario"
       />
       {error ? <p className="mt-3 rounded-[8px] bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
 
@@ -74,14 +82,14 @@ export function ChatExpenseInput() {
           </p>
           <p className="mt-2 text-sm font-black text-[#111827]">{payload.preview}</p>
           <p className="mt-1 text-xs font-semibold text-muted">
-            {payload.result.description} · {formatCurrency(payload.result.amount)} · {payload.result.member_name}
+            {entryDetails(payload.result)}
             {payload.source === "fallback" ? " · modo local" : " · IA"}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button type="button" variant="secondary" onClick={() => setPayload(null)}>
               <X size={16} /> Ajustar
             </Button>
-            <Button type="button" onClick={confirmExpense} disabled={isSaving}>
+            <Button type="button" onClick={confirmEntry} disabled={isSaving}>
               {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
               Confirmar
             </Button>
@@ -96,7 +104,7 @@ export function ChatExpenseInput() {
         onClick={parseMessage}
       >
         {isParsing ? <Loader2 className="animate-spin" size={16} /> : <SendHorizonal size={16} />}
-        <span>Entender gasto</span>
+        <span>Entender lançamento</span>
       </Button>
     </section>
   );

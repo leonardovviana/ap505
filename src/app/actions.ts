@@ -12,7 +12,7 @@ import {
   paymentMethods,
   type Category,
   type IncomeKind,
-  type ParsedExpense,
+  type ParsedFinancialEntry,
   type PaymentMethod,
 } from "@/types/app";
 
@@ -124,6 +124,7 @@ export async function deleteIncomeAction(formData: FormData) {
   const id = asString(formData.get("id"));
   await supabase.from("incomes").delete().eq("id", id);
   revalidatePath("/dashboard");
+  revalidatePath("/chat");
   revalidatePath("/entradas");
 }
 
@@ -166,13 +167,32 @@ export async function createExpenseAction(formData: FormData) {
   redirect(error ? `/expenses?error=${encodeURIComponent(error.message)}` : "/expenses");
 }
 
-export async function createExpenseFromParsedAction(parsed: ParsedExpense) {
+export async function createFinancialEntryFromParsedAction(parsed: ParsedFinancialEntry) {
   const { supabase, user, couple, members, currentMember } = await requireCouple();
   const member =
     members.find((item) => item.display_name.toLowerCase() === parsed.member_name.toLowerCase()) ??
     currentMember;
 
-  if (!member) throw new Error("Não achei quem gastou.");
+  if (!member) throw new Error("Não achei quem lançou.");
+
+  if (parsed.type === "income") {
+    const { error } = await supabase.from("incomes").insert({
+      couple_id: couple.id,
+      member_id: member.id,
+      created_by: user.id,
+      amount: parsed.amount,
+      description: parsed.description,
+      kind: parsed.kind,
+      income_date: parsed.income_date,
+    });
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/chat");
+    revalidatePath("/entradas");
+    return;
+  }
 
   const { error } = await supabase.from("expenses").insert({
     couple_id: couple.id,
@@ -198,6 +218,7 @@ export async function deleteExpenseAction(formData: FormData) {
   const id = asString(formData.get("id"));
   await supabase.from("expenses").delete().eq("id", id);
   revalidatePath("/dashboard");
+  revalidatePath("/chat");
   revalidatePath("/expenses");
 }
 

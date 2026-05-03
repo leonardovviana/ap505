@@ -3,23 +3,43 @@ import { AppShell } from "@/components/app-shell";
 import { ChatExpenseInput } from "@/components/chat-expense-input";
 import { EmptyState } from "@/components/empty-state";
 import { ExpenseCard } from "@/components/expense-card";
+import { IncomeCard } from "@/components/income-card";
 import { requireCouple } from "@/lib/auth/context";
-import type { ExpenseRow } from "@/types/app";
+import type { ExpenseRow, IncomeRow } from "@/types/app";
 
 export const metadata = {
   title: "Chat",
 };
 
+type RecentEntry =
+  | { type: "expense"; created_at: string; entry: ExpenseRow }
+  | { type: "income"; created_at: string; entry: IncomeRow };
+
 export default async function ChatPage() {
   const { supabase, couple, members } = await requireCouple();
-  const { data } = await supabase
-    .from("expenses")
-    .select("*, couple_members(display_name)")
-    .eq("couple_id", couple.id)
-    .order("created_at", { ascending: false })
-    .limit(6);
+  const [{ data: expensesData }, { data: incomesData }] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select("*, couple_members(display_name)")
+      .eq("couple_id", couple.id)
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabase
+      .from("incomes")
+      .select("*, couple_members(display_name)")
+      .eq("couple_id", couple.id)
+      .order("created_at", { ascending: false })
+      .limit(6),
+  ]);
 
-  const expenses = (data ?? []) as ExpenseRow[];
+  const expenses = (expensesData ?? []) as ExpenseRow[];
+  const incomes = (incomesData ?? []) as IncomeRow[];
+  const entries: RecentEntry[] = [
+    ...expenses.map((entry) => ({ type: "expense" as const, created_at: entry.created_at, entry })),
+    ...incomes.map((entry) => ({ type: "income" as const, created_at: entry.created_at, entry })),
+  ]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 6);
 
   return (
     <AppShell coupleId={couple.id} members={members}>
@@ -35,13 +55,13 @@ export default async function ChatPage() {
                 Escreve natural que eu organizo.
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
-                A IA tenta entender primeiro. Se ela não estiver disponível, o parser local segura o jogo.
+                O AP505 entende gastos e entradas, mostra o preview e só salva quando você confirma.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="surface-chip">“5,00 coxinha”</span>
               <span className="surface-chip">“gastei 42 no mercado”</span>
-              <span className="surface-chip">“Maria gastou 30 ontem”</span>
+              <span className="surface-chip">“recebi 3500 salário”</span>
             </div>
           </div>
 
@@ -52,7 +72,7 @@ export default async function ChatPage() {
               </p>
               <p className="mt-2 text-xl font-black text-white">Confere antes de salvar</p>
               <p className="mt-1 text-sm font-medium text-white/72">
-                O AP505 mostra o preview para vocês aprovarem rapidinho.
+                Se algo saiu errado, ajusta a frase antes de confirmar.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -60,13 +80,13 @@ export default async function ChatPage() {
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
                   IA + fallback
                 </p>
-                <p className="mt-2 text-sm font-semibold text-white/90">Gemini tenta, regex segura.</p>
+                <p className="mt-2 text-sm font-semibold text-white/90">Gemini tenta, parser local segura.</p>
               </div>
               <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                  Tempo real
+                  Apagar
                 </p>
-                <p className="mt-2 text-sm font-semibold text-white/90">O outro vê na hora.</p>
+                <p className="mt-2 text-sm font-semibold text-white/90">Errou? Remove o lançamento na hora.</p>
               </div>
             </div>
           </div>
@@ -88,12 +108,16 @@ export default async function ChatPage() {
             </span>
           </div>
           <div className="mt-5 grid gap-3">
-            {expenses.map((expense) => (
-              <ExpenseCard key={expense.id} expense={expense} />
-            ))}
-            {!expenses.length ? (
+            {entries.map((item) =>
+              item.type === "income" ? (
+                <IncomeCard key={`income-${item.entry.id}`} income={item.entry} canDelete />
+              ) : (
+                <ExpenseCard key={`expense-${item.entry.id}`} expense={item.entry} canDelete />
+              ),
+            )}
+            {!entries.length ? (
               <EmptyState title="Chat zerado">
-                Tenta “5,00 coxinha” e confirma o preview.
+                Tenta “5,00 coxinha” ou “recebi 3500 salário” e confirma o preview.
               </EmptyState>
             ) : null}
           </div>

@@ -187,7 +187,7 @@ export default async function DashboardPage() {
             </div>
             <div className="grid gap-3">
               {monthExpenses.slice(0, 4).map((expense) => (
-                <ExpenseCard key={expense.id} expense={expense} />
+                <ExpenseCard key={expense.id} expense={expense} canDelete />
               ))}
               {!monthExpenses.length ? (
                 <EmptyState title="Nada lançado">Bora lançar o primeiro gasto?</EmptyState>

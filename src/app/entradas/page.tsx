@@ -57,7 +57,6 @@ export default async function IncomesPage({
   const byMember = incomesByMember(incomes, members);
   const byKind = incomesByKind(incomes);
   const topKind = dominantIncomeKind(incomes);
-  const latestIncome = incomes[0];
   const leadingMember = [...byMember].sort((a, b) => b.value - a.value)[0];
 
   return (
