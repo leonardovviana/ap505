@@ -110,13 +110,14 @@ async function generateWithModel(
       `Categorias de gasto permitidas: ${categories.join(", ")}.`,
       `Metodos de pagamento permitidos: ${paymentMethods.join(", ")} ou null.`,
       `Tipos de entrada permitidos: ${incomeKinds.join(", ")}.`,
+      `Se pagamento for Vale alimentação, category deve ser Alimentação. Se a mensagem registrar crédito de vale alimentação, use type "income" e kind "food_voucher".`,
       `Mensagem: "${message}"`,
     ].join("\n"),
     config: {
       responseMimeType: "application/json",
       responseJsonSchema,
       systemInstruction:
-        "Voce transforma mensagens informais em lancamentos financeiros. Nao invente valores. Se nao houver data, use hoje. Se nao houver pessoa, use o usuario atual. Para income, use kind salary apenas quando for salario; caso contrario extra. Responda apenas JSON valido.",
+        "Voce transforma mensagens informais em lancamentos financeiros. Nao invente valores. Se nao houver data, use hoje. Se nao houver pessoa, use o usuario atual. Para income, use kind salary apenas quando for salario, food_voucher para credito de vale alimentacao, caso contrario extra. Vale alimentacao como pagamento so pode ser categoria Alimentação. Responda apenas JSON valido.",
     },
   });
 

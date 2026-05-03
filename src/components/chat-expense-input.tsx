@@ -4,9 +4,9 @@ import { useState, useTransition } from "react";
 import { Check, Loader2, SendHorizonal, Sparkles, X } from "lucide-react";
 import { createFinancialEntryFromParsedAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/field";
+import { Field, Select, Textarea } from "@/components/ui/field";
 import { formatCurrency } from "@/lib/utils";
-import { incomeKindLabels, type ParsedFinancialEntry } from "@/types/app";
+import { categories, incomeKindLabels, type Category, type ParsedFinancialEntry } from "@/types/app";
 
 type ParsePayload = {
   result: ParsedFinancialEntry;
@@ -55,6 +55,20 @@ export function ChatExpenseInput() {
     });
   }
 
+  function updateExpenseCategory(category: Category) {
+    setPayload((current) => {
+      if (!current || current.result.type !== "expense") return current;
+      return {
+        ...current,
+        result: {
+          ...current.result,
+          category,
+        },
+        preview: `Confere: gasto de ${formatCurrency(current.result.amount)} em ${category.toLowerCase()}?`,
+      };
+    });
+  }
+
   return (
     <section className="overflow-hidden rounded-[8px] border border-white/70 bg-[linear-gradient(180deg,rgba(130,10,209,0.08),rgba(29,185,84,0.05),rgba(255,255,255,0.98))] p-4 shadow-sm">
       <div className="mb-4 h-1 w-16 rounded-full bg-[linear-gradient(90deg,#1DB954,#820AD1)]" />
@@ -85,6 +99,30 @@ export function ChatExpenseInput() {
             {entryDetails(payload.result)}
             {payload.source === "fallback" ? " · modo local" : " · IA"}
           </p>
+
+          {payload.result.type === "expense" ? (
+            <div className="mt-3">
+              <Field
+                label="Categoria"
+                hint={
+                  payload.result.payment_method === "Vale alimentação"
+                    ? "Vale alimentação só pode ser usado em Alimentação."
+                    : "Pode corrigir antes de confirmar."
+                }
+              >
+                <Select
+                  value={payload.result.category}
+                  onChange={(event) => updateExpenseCategory(event.target.value as Category)}
+                  disabled={payload.result.payment_method === "Vale alimentação"}
+                >
+                  {categories.map((category) => (
+                    <option key={category}>{category}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          ) : null}
+
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button type="button" variant="secondary" onClick={() => setPayload(null)}>
               <X size={16} /> Ajustar

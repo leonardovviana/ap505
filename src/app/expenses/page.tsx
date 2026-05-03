@@ -1,17 +1,14 @@
 import { CircleDollarSign, PlusCircle, Sparkles, UsersRound, WalletCards } from "lucide-react";
-import { createExpenseAction } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { ExpenseCard } from "@/components/expense-card";
-import { MemberSwitcher } from "@/components/member-switcher";
+import { ExpenseForm } from "@/components/expense-form";
 import { SummaryCard } from "@/components/summary-card";
-import { Button } from "@/components/ui/button";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Field, Select } from "@/components/ui/field";
 import { requireCouple } from "@/lib/auth/context";
 import { dominantCategory, expensesByMember, sumExpenses } from "@/lib/expenses/summary";
-import { formatCurrency, toISODate } from "@/lib/utils";
-import type { ExpenseRow } from "@/types/app";
-import { categories, paymentMethods } from "@/types/app";
+import { formatCurrency, monthStart, nextMonthStart, monthLabel } from "@/lib/utils";
+import { categories, type Category, type ExpenseRow, type IncomeRow } from "@/types/app";
 
 export const metadata = {
   title: "Gastos",
@@ -20,20 +17,54 @@ export const metadata = {
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; member?: string; category?: string; month?: string }>;
 }) {
   const { supabase, couple, members, currentMember, userCouples } = await requireCouple();
-  const { error } = await searchParams;
-  const { data } = await supabase
+  const { error, member, category, month } = await searchParams;
+  const selectedMember = members.some((item) => item.id === member) ? member : "";
+  const selectedCategory = categories.includes(category as Category) ? (category as Category) : "";
+  const selectedMonth = /^\d{4}-\d{2}-01$/.test(month ?? "") ? month! : "";
+  const start = selectedMonth || monthStart();
+  const end = nextMonthStart(new Date(`${start}T12:00:00`));
+
+  let expensesQuery = supabase
     .from("expenses")
     .select("*, couple_members(display_name)")
     .eq("couple_id", couple.id)
+    .gte("expense_date", start)
+    .lt("expense_date", end)
     .order("expense_date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(80);
 
+  if (selectedMember) expensesQuery = expensesQuery.eq("member_id", selectedMember);
+  if (selectedCategory) expensesQuery = expensesQuery.eq("category", selectedCategory);
+
+  const [{ data }, { data: foodVoucherIncomes }, { data: foodVoucherExpenses }] = await Promise.all([
+    expensesQuery,
+    supabase
+      .from("incomes")
+      .select("amount")
+      .eq("couple_id", couple.id)
+      .eq("kind", "food_voucher")
+      .gte("income_date", start)
+      .lt("income_date", end),
+    supabase
+      .from("expenses")
+      .select("amount")
+      .eq("couple_id", couple.id)
+      .eq("payment_method", "Vale alimentação")
+      .gte("expense_date", start)
+      .lt("expense_date", end),
+  ]);
+
   const expenses = (data ?? []) as ExpenseRow[];
+  const voucherIncomes = (foodVoucherIncomes ?? []) as Pick<IncomeRow, "amount">[];
+  const voucherExpenses = (foodVoucherExpenses ?? []) as Pick<ExpenseRow, "amount">[];
   const total = sumExpenses(expenses);
+  const foodVoucherBalance =
+    voucherIncomes.reduce((sum, item) => sum + Number(item.amount), 0) -
+    voucherExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
   const byMember = expensesByMember(expenses, members);
   const topCategory = dominantCategory(expenses);
   const latestExpense = expenses[0];
@@ -56,18 +87,18 @@ export default async function ExpensesPage({
             </span>
             <div className="max-w-2xl space-y-3">
               <h1 className="text-4xl font-black tracking-normal text-white md:text-5xl">
-                Vocês gastaram {formatCurrency(total)} esse mês
+                Vocês gastaram {formatCurrency(total)}
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
                 {topCategory
-                  ? `${topCategory} tá puxando mais atenção agora.`
-                  : "Ainda tá tudo calmo por aqui. Vamos lançar o primeiro?"}
+                  ? `${topCategory} está puxando mais atenção agora.`
+                  : "Ainda está tudo calmo por aqui. Vamos lançar o primeiro?"}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="surface-chip">
                 <CircleDollarSign size={14} />
-                {expenses.length} lançamentos
+                {expenses.length} lançamentos em {monthLabel(start)}
               </span>
               <span className="surface-chip">
                 <UsersRound size={14} />
@@ -75,7 +106,7 @@ export default async function ExpensesPage({
               </span>
               <span className="surface-chip">
                 <WalletCards size={14} />
-                {topCategory ?? "Sem categoria"}
+                Vale {formatCurrency(foodVoucherBalance)}
               </span>
             </div>
           </div>
@@ -100,30 +131,28 @@ export default async function ExpensesPage({
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
                   Quem mais lançou?
                 </p>
-                <p className="mt-2 text-xl font-black text-white">
-                  {leadingMember?.name ?? "Sem dados"}
-                </p>
+                <p className="mt-2 text-xl font-black text-white">{leadingMember?.name ?? "Sem dados"}</p>
                 <p className="mt-1 text-sm font-medium text-white/72">
                   {leadingMember ? formatCurrency(leadingMember.value) : "Primeiro gasto define"}
                 </p>
               </div>
               <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                  Ritmo do mês
+                  Vale alimentação
                 </p>
-                <p className="mt-2 text-xl font-black text-white">{expenses.length}</p>
-                <p className="mt-1 text-sm font-medium text-white/72">lançamentos até agora</p>
+                <p className="mt-2 text-xl font-black text-white">{formatCurrency(foodVoucherBalance)}</p>
+                <p className="mt-1 text-sm font-medium text-white/72">saldo separado para alimentação</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-5 grid gap-3 md:grid-cols-4">
         <SummaryCard
-          label="Total do mês"
+          label="Total filtrado"
           value={formatCurrency(total)}
-          hint="Tudo que entrou na conta do casal"
+          hint={selectedMember || selectedCategory ? `Filtros de ${monthLabel(start)}` : monthLabel(start)}
           tone="green"
           icon={<WalletCards size={18} />}
         />
@@ -136,9 +165,16 @@ export default async function ExpensesPage({
         <SummaryCard
           label="Categoria quente"
           value={topCategory ?? "Sem categoria"}
-          hint={topCategory ? "Categoria mais forte do mês" : "Bora lançar o primeiro gasto"}
+          hint={topCategory ? "Categoria mais forte da lista" : "Bora lançar o primeiro gasto"}
           tone="purple"
           icon={<CircleDollarSign size={18} />}
+        />
+        <SummaryCard
+          label="Saldo do vale"
+          value={formatCurrency(foodVoucherBalance)}
+          hint="Entradas de vale menos gastos no vale"
+          tone={foodVoucherBalance >= 0 ? "green" : "purple"}
+          icon={<WalletCards size={18} />}
         />
       </div>
 
@@ -150,7 +186,7 @@ export default async function ExpensesPage({
               <p className="section-title">Novo gasto</p>
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">Lança sem drama</h2>
               <p className="mt-2 text-sm font-medium leading-6 text-muted">
-                Preenche os campos básicos e deixa o resto organizado no app.
+                Vale alimentação fica separado e só entra em Alimentação.
               </p>
             </div>
             <span className="grid h-11 w-11 place-items-center rounded-[8px] bg-ap-mint text-ap-green ring-1 ring-emerald-100">
@@ -158,49 +194,7 @@ export default async function ExpensesPage({
             </span>
           </div>
 
-          <form action={createExpenseAction} className="mt-5 grid gap-4">
-            <Field label="Valor">
-              <Input name="amount" inputMode="decimal" placeholder="42,00" required />
-            </Field>
-            <Field label="Descrição">
-              <Input name="description" placeholder="Mercado" required />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Categoria">
-                <Select name="category" defaultValue="Alimentação">
-                  {categories.map((category) => (
-                    <option key={category}>{category}</option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="Quem gastou?">
-                <MemberSwitcher members={members} defaultValue={currentMember?.id} />
-              </Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Data">
-                <Input name="expense_date" type="date" defaultValue={toISODate()} required />
-              </Field>
-              <Field label="Pagamento">
-                <Select name="payment_method" defaultValue="">
-                  <option value="">Não lembro</option>
-                  {paymentMethods.map((method) => (
-                    <option key={method}>{method}</option>
-                  ))}
-                </Select>
-              </Field>
-            </div>
-            <Field label="Observação" hint="Opcional, sem burocracia.">
-              <Textarea name="notes" placeholder="Ex: compra da semana" />
-            </Field>
-            {error ? (
-              <p className="rounded-[8px] bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p>
-            ) : null}
-            <Button type="submit" className="justify-between">
-              Salvar gasto
-              <Sparkles size={16} />
-            </Button>
-          </form>
+          <ExpenseForm members={members} currentMemberId={currentMember?.id} error={error} />
         </section>
 
         <section className="soft-card overflow-hidden rounded-[8px] p-5">
@@ -211,16 +205,50 @@ export default async function ExpensesPage({
               <h2 className="mt-2 text-2xl font-black tracking-normal text-[#111827]">O que acabou de entrar</h2>
             </div>
             <p className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#111827] ring-1 ring-black/5">
-              {expenses.length} no mês
+              {expenses.length} na lista
             </p>
           </div>
+
+          <form className="mt-5 grid gap-3 rounded-[8px] bg-white/75 p-3 ring-1 ring-black/5 sm:grid-cols-[1fr_1fr_auto]">
+            <input type="hidden" name="month" value={start} />
+            <Field label="Quem gastou">
+              <Select name="member" defaultValue={selectedMember}>
+                <option value="">Todos</option>
+                {members.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.display_name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Categoria">
+              <Select name="category" defaultValue={selectedCategory}>
+                <option value="">Todas</option>
+                {categories.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </Select>
+            </Field>
+            <div className="flex items-end gap-2">
+              <button className="focus-ring h-12 rounded-[8px] bg-[#111827] px-4 text-sm font-bold text-white transition hover:bg-black">
+                Filtrar
+              </button>
+              <a
+                href={`/expenses?month=${start}`}
+                className="focus-ring inline-flex h-12 items-center rounded-[8px] bg-white px-4 text-sm font-bold text-[#111827] ring-1 ring-border transition hover:bg-ap-lilac/70"
+              >
+                Todos
+              </a>
+            </div>
+          </form>
+
           <div className="mt-5 grid gap-3">
             {expenses.map((expense) => (
               <ExpenseCard key={expense.id} expense={expense} canDelete />
             ))}
             {!expenses.length ? (
               <EmptyState title="Nada por aqui">
-                Quando lançar, os gastos aparecem aqui bonitinhos.
+                Nenhum gasto bate com esse filtro.
               </EmptyState>
             ) : null}
           </div>

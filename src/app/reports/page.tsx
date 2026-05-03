@@ -1,4 +1,5 @@
-import { BarChart3, BadgeDollarSign, UsersRound, WalletCards } from "lucide-react";
+import Link from "next/link";
+import { ArrowDownToLine, BarChart3, BadgeDollarSign, CalendarDays, FileSpreadsheet, Printer, UsersRound, WalletCards } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
 import { SpendingChart } from "@/components/spending-chart";
@@ -12,10 +13,31 @@ export const metadata = {
   title: "Relatórios",
 };
 
-export default async function ReportsPage() {
+function cleanMonth(value?: string) {
+  return /^\d{4}-\d{2}-01$/.test(value ?? "") ? value! : monthStart();
+}
+
+function shiftMonth(value: string, offset: number) {
+  const [year, month] = value.split("-").map(Number);
+  return monthStart(new Date(year, month - 1 + offset, 1));
+}
+
+function expenseCategoryHref(category: string, month: string) {
+  const params = new URLSearchParams({ category, month });
+  return `/expenses?${params.toString()}`;
+}
+
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
   const { supabase, couple, members, currentMember, userCouples } = await requireCouple();
-  const start = monthStart();
-  const end = nextMonthStart();
+  const { month } = await searchParams;
+  const start = cleanMonth(month);
+  const end = nextMonthStart(new Date(`${start}T12:00:00`));
+  const exportParams = new URLSearchParams({ month: start });
+
   const { data } = await supabase
     .from("expenses")
     .select("*, couple_members(display_name)")
@@ -29,6 +51,9 @@ export default async function ReportsPage() {
   const byCategory = expensesByCategory(expenses);
   const byMember = expensesByMember(expenses, members);
   const topCategory = dominantCategory(expenses);
+  const previousMonth = shiftMonth(start, -1);
+  const nextMonth = shiftMonth(start, 1);
+  const currentMonth = monthStart();
 
   return (
     <AppShell
@@ -47,16 +72,19 @@ export default async function ReportsPage() {
             </span>
             <div className="max-w-2xl space-y-3">
               <h1 className="text-4xl font-black tracking-normal text-white md:text-5xl">
-                Esse mês alimentação dominou?
+                Fechamento de {monthLabel(start)}.
               </h1>
               <p className="max-w-xl text-sm leading-7 text-white/72 md:text-base">
                 {topCategory
-                  ? `${topCategory} tá puxando ${monthLabel(start)} para cima.`
-                  : "Ainda sem dados suficientes. Lança alguns gastos e o retrato aparece aqui."}
+                  ? `${topCategory} liderou o mês. Clique em uma categoria para abrir todos os lançamentos dela.`
+                  : "Esse mês ainda está zerado. Quando lançar gastos, o relatório aparece aqui."}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="surface-chip">{monthLabel(start)}</span>
+              <span className="surface-chip">
+                <CalendarDays size={14} />
+                {monthLabel(start)}
+              </span>
               <span className="surface-chip">
                 <BadgeDollarSign size={14} />
                 {topCategory ?? "Sem categoria"}
@@ -71,24 +99,42 @@ export default async function ReportsPage() {
           <div className="grid gap-3">
             <div className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                Resumo do mês
+                Navegar meses
               </p>
-              <p className="mt-2 text-3xl font-black text-white">{formatCurrency(total)}</p>
-              <p className="mt-1 text-sm font-medium text-white/72">
-                {topCategory ? `A categoria líder é ${topCategory.toLowerCase()}.` : "Sem categoria líder ainda."}
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <Link href={`/reports?month=${previousMonth}`} className="rounded-[8px] bg-white/10 px-3 py-2 text-center text-sm font-black text-white transition hover:bg-white/20">
+                  Anterior
+                </Link>
+                <Link href={`/reports?month=${currentMonth}`} className="rounded-[8px] bg-white px-3 py-2 text-center text-sm font-black text-[#111827]">
+                  Atual
+                </Link>
+                <Link href={`/reports?month=${nextMonth}`} className="rounded-[8px] bg-white/10 px-3 py-2 text-center text-sm font-black text-white transition hover:bg-white/20">
+                  Próximo
+                </Link>
+              </div>
+              <p className="mt-3 text-sm font-medium text-white/72">
+                A virada do mês já começa zerada; meses anteriores ficam guardados aqui.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {byMember.map((item) => (
-                <div key={item.name} className="rounded-[8px] bg-white/10 p-4 backdrop-blur">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">
-                    {item.name}
-                  </p>
-                  <p className="mt-2 text-xl font-black text-white">{formatCurrency(item.value)}</p>
-                  <p className="mt-1 text-sm font-medium text-white/72">gasto no mês</p>
-                </div>
-              ))}
+              <a
+                href={`/reports/export?${exportParams.toString()}&format=pdf`}
+                target="_blank"
+                className="rounded-[8px] bg-white/10 p-4 text-white backdrop-blur transition hover:bg-white/20"
+              >
+                <Printer size={18} />
+                <p className="mt-2 text-sm font-black">PDF</p>
+                <p className="mt-1 text-xs font-medium text-white/72">abre pronto para salvar</p>
+              </a>
+              <a
+                href={`/reports/export?${exportParams.toString()}&format=xls`}
+                className="rounded-[8px] bg-white/10 p-4 text-white backdrop-blur transition hover:bg-white/20"
+              >
+                <FileSpreadsheet size={18} />
+                <p className="mt-2 text-sm font-black">Excel</p>
+                <p className="mt-1 text-xs font-medium text-white/72">planilha organizada</p>
+              </a>
             </div>
           </div>
         </div>
@@ -98,7 +144,7 @@ export default async function ReportsPage() {
         <SummaryCard
           label="Total do mês"
           value={formatCurrency(total)}
-          hint="Tudo que entrou no mês atual"
+          hint={monthLabel(start)}
           tone="green"
           icon={<WalletCards size={18} />}
         />
@@ -142,16 +188,23 @@ export default async function ReportsPage() {
           </div>
           <div className="mt-5 grid gap-3">
             {byCategory.map((item) => (
-              <div
+              <Link
                 key={item.name}
-                className="flex items-center justify-between rounded-[8px] bg-white/80 px-4 py-3 ring-1 ring-black/5"
+                href={expenseCategoryHref(item.name, start)}
+                className="group flex items-center justify-between rounded-[8px] bg-white/80 px-4 py-3 ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:bg-ap-mint/70 hover:ring-emerald-200"
               >
-                <span className="text-sm font-black text-[#111827]">{item.name}</span>
+                <span>
+                  <span className="block text-sm font-black text-[#111827]">{item.name}</span>
+                  <span className="mt-1 flex items-center gap-1 text-xs font-bold text-muted">
+                    <ArrowDownToLine size={13} />
+                    Ver gastos dessa categoria
+                  </span>
+                </span>
                 <span className="text-sm font-black text-[#111827]">{formatCurrency(item.value)}</span>
-              </div>
+              </Link>
             ))}
             {!byCategory.length ? (
-              <EmptyState title="Sem relatório">Lança alguns gastos e volta aqui.</EmptyState>
+              <EmptyState title="Sem relatório">Esse mês está zerado. Selecione outro mês ou lance novos gastos.</EmptyState>
             ) : null}
           </div>
         </section>

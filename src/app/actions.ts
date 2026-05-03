@@ -29,6 +29,12 @@ function cleanPayment(value: string): PaymentMethod | null {
   return paymentMethods.includes(value as PaymentMethod) ? (value as PaymentMethod) : "Outro";
 }
 
+function foodVoucherCategoryError(paymentMethod: PaymentMethod | null, category: Category) {
+  return paymentMethod === "Vale alimentação" && category !== "Alimentação"
+    ? "Vale alimentação só pode ser usado com a categoria Alimentação."
+    : null;
+}
+
 function cleanIncomeKind(value: string): IncomeKind {
   return incomeKinds.includes(value as IncomeKind) ? (value as IncomeKind) : "salary";
 }
@@ -209,6 +215,9 @@ export async function createExpenseAction(formData: FormData) {
   const memberId = asString(formData.get("member_id"));
   const category = cleanCategory(asString(formData.get("category"), "Outros"));
   const paymentMethod = cleanPayment(asString(formData.get("payment_method")));
+  const categoryError = foodVoucherCategoryError(paymentMethod, category);
+
+  if (categoryError) redirect(`/expenses?error=${encodeURIComponent(categoryError)}`);
 
   const { error } = await supabase.from("expenses").insert({
     couple_id: couple.id,
@@ -255,20 +264,24 @@ export async function createFinancialEntryFromParsedAction(parsed: ParsedFinanci
     return;
   }
 
+  const parsedCategory = cleanCategory(parsed.category);
+  const parsedCategoryError = foodVoucherCategoryError(parsed.payment_method, parsedCategory);
+  if (parsedCategoryError) throw new Error(parsedCategoryError);
+
   const { error } = await supabase.from("expenses").insert({
     couple_id: couple.id,
     member_id: member.id,
     created_by: user.id,
     amount: parsed.amount,
     description: parsed.description,
-    category: cleanCategory(parsed.category),
+    category: parsedCategory,
     payment_method: parsed.payment_method,
     expense_date: parsed.expense_date,
   });
 
   if (error) throw new Error(error.message);
 
-  await notifyPartner(couple.id, parsed.amount, parsed.category);
+  await notifyPartner(couple.id, parsed.amount, parsedCategory);
   revalidatePath("/dashboard");
   revalidatePath("/chat");
   revalidatePath("/expenses");

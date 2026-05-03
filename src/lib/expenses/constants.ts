@@ -16,5 +16,6 @@ export const paymentLabels: Record<PaymentMethod, string> = {
   Débito: "Débito",
   Crédito: "Crédito",
   Dinheiro: "Dinheiro",
+  "Vale alimentação": "Vale alimentação",
   Outro: "Outro",
 };

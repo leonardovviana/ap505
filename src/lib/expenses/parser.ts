@@ -84,6 +84,13 @@ function inferCategory(message: string): Category {
 
 function inferPayment(message: string) {
   const normalized = message.toLowerCase();
+  if (
+    normalized.includes("vale alimentação") ||
+    normalized.includes("vale alimentacao") ||
+    /\bva\b/.test(normalized)
+  ) {
+    return "Vale alimentação";
+  }
   if (normalized.includes("pix")) return "Pix";
   if (normalized.includes("débito") || normalized.includes("debito")) return "Débito";
   if (normalized.includes("crédito") || normalized.includes("credito") || normalized.includes("cartão")) {
@@ -136,6 +143,13 @@ function inferEntryType(message: string): "expense" | "income" {
 
 function inferIncomeKind(message: string): IncomeKind {
   const normalized = message.toLowerCase();
+  if (
+    normalized.includes("vale alimentação") ||
+    normalized.includes("vale alimentacao") ||
+    /\bva\b/.test(normalized)
+  ) {
+    return "food_voucher";
+  }
   return normalized.includes("salario") || normalized.includes("salário") ? "salary" : "extra";
 }
 
@@ -177,8 +191,8 @@ export function interpretExpenseMessage(
   }
 
   const member = inferMember(message, currentUser, coupleMembers);
-  const category = inferCategory(message);
   const payment = inferPayment(message);
+  const category = payment === "Vale alimentação" ? "Alimentação" : inferCategory(message);
   const expenseDate = inferDate(message);
 
   return parsedExpenseSchema.parse({
